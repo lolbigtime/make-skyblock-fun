@@ -31,6 +31,7 @@ public class FishingMacro {
     private int hyperionAttempts = 0;
     private final Clock attackTimer = new Clock();
     private final Clock killTimeout = new Clock();
+    private boolean rodSlotSelected = false;
 
     public static FishingMacro getInstance() {
         if (instance == null) instance = new FishingMacro();
@@ -43,6 +44,7 @@ public class FishingMacro {
         returnHandler.savePosition();
         antiAfk.start();
         biteDetector.reset();
+        rodSlotSelected = false;
         changeState(MacroState.CASTING);
     }
 
@@ -54,6 +56,7 @@ public class FishingMacro {
         antiAfk.reset();
         biteDetector.reset();
         targetCreature = null;
+        rodSlotSelected = false;
         changeState(MacroState.IDLE);
     }
 
@@ -63,6 +66,10 @@ public class FishingMacro {
 
     public MacroState getState() {
         return state;
+    }
+
+    public ReturnHandler getReturnHandler() {
+        return returnHandler;
     }
 
     public void onTick() {
@@ -141,6 +148,7 @@ public class FishingMacro {
                     (long) MacroConfig.reelDelayMinMs,
                     (long) MacroConfig.reelDelayMaxMs
             ));
+            rodSlotSelected = false;
             changeState(MacroState.REELING);
             return;
         }
@@ -152,9 +160,23 @@ public class FishingMacro {
     private void handleReeling() {
         if (!stateTimer.passed()) return;
 
+        // Ensure rod is selected before reeling
+        if (!rodSlotSelected) {
+            KeySimulator.pressHotbar(MacroConfig.rodSlot);
+            rodSlotSelected = true;
+            stateTimer.schedule(MathUtil.randomBetween(50, 120));
+            return;
+        }
+
         // Right-click to reel in
         KeySimulator.rightClick();
-        stateTimer.schedule(MathUtil.randomBetween(150, 300));
+        rodSlotSelected = false;
+
+        // Post-reel delay to let the catch register
+        stateTimer.schedule(MathUtil.randomBetween(
+                (long) MacroConfig.postReelDelayMinMs,
+                (long) MacroConfig.postReelDelayMaxMs
+        ));
         changeState(MacroState.ROTATING);
     }
 
@@ -184,7 +206,17 @@ public class FishingMacro {
 
     private void handleReCasting() {
         if (!stateTimer.passed()) return;
+
+        // Ensure rod is selected before casting
+        if (!rodSlotSelected) {
+            KeySimulator.pressHotbar(MacroConfig.rodSlot);
+            rodSlotSelected = true;
+            stateTimer.schedule(MathUtil.randomBetween(50, 120));
+            return;
+        }
+
         KeySimulator.rightClick();
+        rodSlotSelected = false;
         changeState(MacroState.WAITING_FOR_BITE);
         stateTimer.schedule(MathUtil.randomBetween(500, 800));
     }
@@ -302,6 +334,7 @@ public class FishingMacro {
         targetCreature = null;
         attackTimer.reset();
         killTimeout.reset();
+        rodSlotSelected = false;
         stateTimer.schedule(MathUtil.randomBetween(200, 400));
         changeState(MacroState.CASTING);
     }
@@ -319,6 +352,7 @@ public class FishingMacro {
             KeySimulator.releaseKey(mc.options.forwardKey);
             KeySimulator.releaseKey(mc.options.sprintKey);
             returnHandler.stopReturn();
+            rodSlotSelected = false;
             stateTimer.schedule(MathUtil.randomBetween(100, 300));
             changeState(MacroState.RESUMING);
         }

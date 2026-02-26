@@ -29,18 +29,28 @@ public class AntiAfk {
             return;
         }
 
-        // Calculate drift with bias back toward zero
-        float maxYaw = MacroConfig.antiAfkMaxYawDrift;
-        float maxPitch = MacroConfig.antiAfkMaxPitchDrift;
+        // Calculate mouse sensitivity scaling
+        // Vanilla formula: ((sens * 0.6 + 0.2)^3 * 8.0) * 0.15 degrees per pixel
+        double sens = mc.options.getMouseSensitivity().getValue();
+        double degreesPerPixel = Math.pow(sens * 0.6 + 0.2, 3) * 8.0 * 0.15;
 
-        float yawDelta = MathUtil.randomFloat(-maxYaw, maxYaw);
-        float pitchDelta = MathUtil.randomFloat(-maxPitch, maxPitch);
+        // Scale wiggle to correspond to natural mouse movement (5-25 pixels)
+        float pixelRange = MathUtil.randomFloat(5.0f, 25.0f);
+        float maxYawDeg = (float) (pixelRange * degreesPerPixel);
+        float maxPitchDeg = (float) (pixelRange * degreesPerPixel * 0.5);
+
+        // Clamp to configured limits
+        maxYawDeg = Math.min(maxYawDeg, MacroConfig.antiAfkMaxYawDrift);
+        maxPitchDeg = Math.min(maxPitchDeg, MacroConfig.antiAfkMaxPitchDrift);
+
+        float yawDelta = MathUtil.randomFloat(-maxYawDeg, maxYawDeg);
+        float pitchDelta = MathUtil.randomFloat(-maxPitchDeg, maxPitchDeg);
 
         // Bias toward center if we've drifted too far
-        if (Math.abs(cumulativeYawDrift + yawDelta) > maxYaw * 3) {
+        if (Math.abs(cumulativeYawDrift + yawDelta) > MacroConfig.antiAfkMaxYawDrift * 3) {
             yawDelta = -cumulativeYawDrift * MathUtil.randomFloat(0.3f, 0.6f);
         }
-        if (Math.abs(cumulativePitchDrift + pitchDelta) > maxPitch * 3) {
+        if (Math.abs(cumulativePitchDrift + pitchDelta) > MacroConfig.antiAfkMaxPitchDrift * 3) {
             pitchDelta = -cumulativePitchDrift * MathUtil.randomFloat(0.3f, 0.6f);
         }
 
@@ -54,8 +64,9 @@ public class AntiAfk {
         float targetYaw = mc.player.getYaw() + yawDelta;
         float targetPitch = mc.player.getPitch() + pitchDelta;
 
-        long duration = (long) MathUtil.randomFloat(200, 500);
-        RotationHandler.getInstance().easeTo(targetYaw, targetPitch, duration);
+        // Use smooth easing (400-800ms) for gentle, natural movement
+        long duration = (long) MathUtil.randomFloat(400, 800);
+        RotationHandler.getInstance().easeSmoothTo(targetYaw, targetPitch, duration);
 
         scheduleNext();
     }

@@ -12,6 +12,11 @@ public class RotationHandler {
     private static final MinecraftClient mc = MinecraftClient.getInstance();
     private static RotationHandler instance;
 
+    public enum EaseMode {
+        STANDARD,
+        SMOOTH
+    }
+
     private boolean rotating = false;
     private float startYaw, startPitch;
     private float targetYaw, targetPitch;
@@ -20,6 +25,7 @@ public class RotationHandler {
     private boolean useOvershoot;
     private float overshootYaw, overshootPitch;
     private boolean overshootPhase;
+    private EaseMode easeMode = EaseMode.STANDARD;
 
     public static RotationHandler getInstance() {
         if (instance == null) instance = new RotationHandler();
@@ -28,6 +34,8 @@ public class RotationHandler {
 
     public void easeTo(float targetYaw, float targetPitch, long durationMs) {
         if (mc.player == null) return;
+
+        this.easeMode = EaseMode.STANDARD;
 
         this.startYaw = mc.player.getYaw();
         this.startPitch = mc.player.getPitch();
@@ -66,6 +74,33 @@ public class RotationHandler {
         }
     }
 
+    public void easeSmoothTo(float targetYaw, float targetPitch, long durationMs) {
+        if (mc.player == null) return;
+
+        this.easeMode = EaseMode.SMOOTH;
+
+        this.startYaw = mc.player.getYaw();
+        this.startPitch = mc.player.getPitch();
+        this.targetYaw = targetYaw;
+        this.targetPitch = targetPitch;
+
+        // Wrap yaw difference to shortest path
+        float yawDiff = MathUtil.wrapAngleDeg(targetYaw - startYaw);
+        this.targetYaw = startYaw + yawDiff;
+
+        // Randomize duration ±15%
+        float jitter = MathUtil.randomFloat(0.85f, 1.15f);
+        long adjustedDuration = (long) (durationMs * jitter);
+        adjustedDuration = Math.max(adjustedDuration, 50);
+
+        this.startTime = System.currentTimeMillis();
+        this.endTime = startTime + adjustedDuration;
+        this.rotating = true;
+
+        // No overshoot in smooth mode
+        this.useOvershoot = false;
+    }
+
     public void easeToEntity(Entity target) {
         if (mc.player == null || target == null) return;
         float[] rot = getHumanizedRotationTo(target);
@@ -87,7 +122,7 @@ public class RotationHandler {
 
         long now = System.currentTimeMillis();
         if (now >= endTime) {
-            if (useOvershoot && !overshootPhase) {
+            if (easeMode == EaseMode.STANDARD && useOvershoot && !overshootPhase) {
                 // Overshoot: we went past target, now ease back
                 overshootPhase = true;
                 startYaw = mc.player.getYaw();
@@ -105,11 +140,17 @@ public class RotationHandler {
         }
 
         float progress = (float) (now - startTime) / (float) (endTime - startTime);
-        float easedProgress = MathUtil.easeOutBack(progress, easingModifier);
-        easedProgress = MathUtil.clamp(easedProgress, 0.0f, 1.15f);
+
+        float easedProgress;
+        if (easeMode == EaseMode.SMOOTH) {
+            easedProgress = MathUtil.easeInOutCubic(progress);
+        } else {
+            easedProgress = MathUtil.easeOutBack(progress, easingModifier);
+            easedProgress = MathUtil.clamp(easedProgress, 0.0f, 1.15f);
+        }
 
         float currentYaw, currentPitch;
-        if (useOvershoot && !overshootPhase) {
+        if (easeMode == EaseMode.STANDARD && useOvershoot && !overshootPhase) {
             // During first phase, overshoot the target slightly
             currentYaw = startYaw + (targetYaw + overshootYaw - startYaw) * easedProgress;
             currentPitch = startPitch + (targetPitch + overshootPitch - startPitch) * easedProgress;

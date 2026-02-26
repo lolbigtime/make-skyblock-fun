@@ -3,6 +3,7 @@ package com.fishingmacro;
 import com.fishingmacro.config.MacroConfig;
 import com.fishingmacro.handler.RotationHandler;
 import com.fishingmacro.macro.FishingMacro;
+import com.fishingmacro.render.RenderHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -30,6 +31,8 @@ public class FishingMacroClient implements ClientModInitializer {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+
+        RenderHandler.getInstance().register();
     }
 
     private void onClientTick(MinecraftClient client) {

@@ -39,6 +39,12 @@ public class MathUtil {
         return 1.0f + c3 * (float) Math.pow(x - 1, 3) + c1 * (float) Math.pow(x - 1, 2);
     }
 
+    public static float easeInOutCubic(float x) {
+        return x < 0.5f
+                ? 4.0f * x * x * x
+                : 1.0f - (float) Math.pow(-2.0 * x + 2.0, 3) / 2.0f;
+    }
+
     public static float clamp(float value, float min, float max) {
         return Math.max(min, Math.min(max, value));
     }

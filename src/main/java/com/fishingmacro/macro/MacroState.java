@@ -1,16 +1,26 @@
 package com.fishingmacro.macro;
 
 public enum MacroState {
-    IDLE,
-    CASTING,
-    WAITING_FOR_BITE,
-    REELING,
-    ROTATING,
-    RE_CASTING,
-    SEA_CREATURE_DETECTED,
-    SWAPPING_TO_WEAPON,
-    KILLING,
-    SWAPPING_TO_ROD,
-    RETURNING_TO_SPOT,
-    RESUMING
+    IDLE("Idle"),
+    CASTING("Casting rod"),
+    WAITING_FOR_BITE("Waiting for bite"),
+    REELING("Reeling in"),
+    ROTATING("Rotating"),
+    RE_CASTING("Re-casting"),
+    SEA_CREATURE_DETECTED("Sea creature detected"),
+    SWAPPING_TO_WEAPON("Swapping to weapon"),
+    KILLING("Fighting"),
+    SWAPPING_TO_ROD("Swapping to rod"),
+    RETURNING_TO_SPOT("Returning to spot"),
+    RESUMING("Resuming");
+
+    private final String displayName;
+
+    MacroState(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 }

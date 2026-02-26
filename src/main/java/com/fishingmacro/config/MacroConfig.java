@@ -30,6 +30,8 @@ public class MacroConfig {
     public static int reelDelayMaxMs = 400;
     public static int castDelayMinMs = 150;
     public static int castDelayMaxMs = 350;
+    public static int postReelDelayMinMs = 300;
+    public static int postReelDelayMaxMs = 600;
 
     // Anti-AFK
     public static int antiAfkMinIntervalMs = 15000;
@@ -57,6 +59,8 @@ public class MacroConfig {
         int reelDelayMaxMs = MacroConfig.reelDelayMaxMs;
         int castDelayMinMs = MacroConfig.castDelayMinMs;
         int castDelayMaxMs = MacroConfig.castDelayMaxMs;
+        int postReelDelayMinMs = MacroConfig.postReelDelayMinMs;
+        int postReelDelayMaxMs = MacroConfig.postReelDelayMaxMs;
         int antiAfkMinIntervalMs = MacroConfig.antiAfkMinIntervalMs;
         int antiAfkMaxIntervalMs = MacroConfig.antiAfkMaxIntervalMs;
         double knockbackThreshold = MacroConfig.knockbackThreshold;
@@ -81,6 +85,8 @@ public class MacroConfig {
             reelDelayMaxMs = data.reelDelayMaxMs;
             castDelayMinMs = data.castDelayMinMs;
             castDelayMaxMs = data.castDelayMaxMs;
+            postReelDelayMinMs = data.postReelDelayMinMs;
+            postReelDelayMaxMs = data.postReelDelayMaxMs;
             antiAfkMinIntervalMs = data.antiAfkMinIntervalMs;
             antiAfkMaxIntervalMs = data.antiAfkMaxIntervalMs;
             knockbackThreshold = data.knockbackThreshold;
@@ -101,6 +107,8 @@ public class MacroConfig {
         data.reelDelayMaxMs = reelDelayMaxMs;
         data.castDelayMinMs = castDelayMinMs;
         data.castDelayMaxMs = castDelayMaxMs;
+        data.postReelDelayMinMs = postReelDelayMinMs;
+        data.postReelDelayMaxMs = postReelDelayMaxMs;
         data.antiAfkMinIntervalMs = antiAfkMinIntervalMs;
         data.antiAfkMaxIntervalMs = antiAfkMaxIntervalMs;
         data.knockbackThreshold = knockbackThreshold;
