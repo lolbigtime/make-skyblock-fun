@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "fishingmacro",
+  "version": "${version}",
+  "name": "Fishing Macro",
+  "description": "Automated fishing macro for Hypixel SkyBlock",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.fishingmacro.FishingMacroClient"
+    ]
+  },
+  "mixins": [
+    "fishing-macro.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

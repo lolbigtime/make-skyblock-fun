@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.fishingmacro.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "KeyBindingAccessor",
+    "MinecraftClientAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
