@@ -5,7 +5,6 @@ public enum MacroState {
     CASTING("Casting rod"),
     WAITING_FOR_BITE("Waiting for bite"),
     REELING("Reeling in"),
-    ROTATING("Rotating"),
     RE_CASTING("Re-casting"),
     SEA_CREATURE_DETECTED("Sea creature detected"),
     SWAPPING_TO_WEAPON("Swapping to weapon"),

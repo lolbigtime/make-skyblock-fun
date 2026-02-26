@@ -32,6 +32,7 @@ public class FishingMacro {
     private final Clock attackTimer = new Clock();
     private final Clock killTimeout = new Clock();
     private boolean rodSlotSelected = false;
+    private boolean lookedDown = false;
 
     public static FishingMacro getInstance() {
         if (instance == null) instance = new FishingMacro();
@@ -82,7 +83,6 @@ public class FishingMacro {
             case CASTING -> handleCasting();
             case WAITING_FOR_BITE -> handleWaitingForBite();
             case REELING -> handleReeling();
-            case ROTATING -> handleRotating();
             case RE_CASTING -> handleReCasting();
             case SEA_CREATURE_DETECTED -> handleSeaCreatureDetected();
             case SWAPPING_TO_WEAPON -> handleSwappingToWeapon();
@@ -177,31 +177,7 @@ public class FishingMacro {
                 (long) MacroConfig.postReelDelayMinMs,
                 (long) MacroConfig.postReelDelayMaxMs
         ));
-        changeState(MacroState.ROTATING);
-    }
-
-    private void handleRotating() {
-        if (!stateTimer.passed()) return;
-
-        if (!RotationHandler.getInstance().isRotating()) {
-            // Apply small random rotation for humanization
-            float yawDelta = MathUtil.randomFloat(-2.5f, 2.5f);
-            float pitchDelta = MathUtil.randomFloat(-1.0f, 1.0f);
-
-            float targetYaw = mc.player.getYaw() + yawDelta;
-            float targetPitch = mc.player.getPitch() + pitchDelta;
-            RotationHandler.getInstance().easeTo(targetYaw, targetPitch,
-                    (long) MathUtil.randomFloat(150, 350));
-        }
-
-        if (!RotationHandler.getInstance().isRotating()) {
-            // Rotation done, move to re-cast
-            stateTimer.schedule(MathUtil.randomBetween(
-                    (long) MacroConfig.castDelayMinMs,
-                    (long) MacroConfig.castDelayMaxMs
-            ));
-            changeState(MacroState.RE_CASTING);
-        }
+        changeState(MacroState.RE_CASTING);
     }
 
     private void handleReCasting() {
@@ -235,6 +211,7 @@ public class FishingMacro {
 
         KeySimulator.pressHotbar(MacroConfig.weaponSlot);
         hyperionAttempts = 0;
+        lookedDown = false;
         killTimeout.schedule(MacroConfig.killTimeoutMs);
         stateTimer.schedule(MathUtil.randomBetween(100, 200));
         changeState(MacroState.KILLING);
@@ -264,8 +241,9 @@ public class FishingMacro {
 
     private void handleHyperionKill() {
         // Look down at floor for Wither Impact AoE
-        if (!RotationHandler.getInstance().isRotating() && hyperionAttempts == 0) {
+        if (!lookedDown) {
             RotationHandler.getInstance().lookDownAtFloor();
+            lookedDown = true;
         }
 
         if (RotationHandler.getInstance().isRotating()) return;

@@ -82,7 +82,7 @@ public class RenderHandler {
     private int getStateColor(MacroState state) {
         return switch (state) {
             case WAITING_FOR_BITE -> 0xFF55FF55;   // Green
-            case CASTING, ROTATING, RE_CASTING, RESUMING -> 0xFFFFFF55; // Yellow
+            case CASTING, RE_CASTING, RESUMING -> 0xFFFFFF55; // Yellow
             case KILLING, SWAPPING_TO_WEAPON -> 0xFFFF5555; // Red
             case RETURNING_TO_SPOT -> 0xFFFF8800;  // Orange
             case SEA_CREATURE_DETECTED -> 0xFFFF5555; // Red
