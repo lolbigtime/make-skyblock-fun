@@ -69,7 +69,7 @@ public class RotationHandler {
     public void easeToEntity(Entity target) {
         if (mc.player == null || target == null) return;
         float[] rot = getHumanizedRotationTo(target);
-        float dist = (float) mc.player.getPos().distanceTo(target.getPos());
+        float dist = (float) mc.player.getEntityPos().distanceTo(target.getEntityPos());
         long duration = (long) (MacroConfig.rotationBaseTimeMs * MathUtil.randomFloat(0.8f, 1.2f));
         if (dist > 8) duration = (long) (duration * 1.3f);
         easeTo(rot[0], rot[1], duration);

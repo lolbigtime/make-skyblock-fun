@@ -36,7 +36,7 @@ public class KeySimulator {
     public static void pressHotbar(int slot) {
         if (mc.player == null) return;
         if (slot < 0 || slot > 8) return;
-        mc.player.getInventory().selectedSlot = slot;
+        mc.player.getInventory().setSelectedSlot(slot);
     }
 
     public static void releaseAllKeys() {

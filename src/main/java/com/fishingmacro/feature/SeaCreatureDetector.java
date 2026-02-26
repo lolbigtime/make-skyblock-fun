@@ -19,7 +19,7 @@ public class SeaCreatureDetector {
         if (mc.player == null || mc.world == null) return Optional.empty();
 
         List<LivingEntity> entities = EntityScanner.getEntitiesWithinRadius(
-                mc.player.getPos(),
+                mc.player.getEntityPos(),
                 MacroConfig.seaCreatureDetectionRadius,
                 LivingEntity.class,
                 this::isSeaCreature

@@ -18,7 +18,7 @@ public class BiteDetector {
         if (cooldown.isScheduled() && !cooldown.passed()) return false;
 
         List<ArmorStandEntity> armorStands = EntityScanner.getEntitiesWithinRadius(
-                mc.player.getPos(), 5.0, ArmorStandEntity.class
+                mc.player.getEntityPos(), 5.0, ArmorStandEntity.class
         );
 
         for (ArmorStandEntity stand : armorStands) {

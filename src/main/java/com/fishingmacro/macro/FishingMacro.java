@@ -68,6 +68,9 @@ public class FishingMacro {
     public void onTick() {
         if (!running || mc.player == null || mc.world == null) return;
 
+        // Pause when a screen (menu/chat/inventory) is open
+        if (mc.currentScreen != null) return;
+
         switch (state) {
             case CASTING -> handleCasting();
             case WAITING_FOR_BITE -> handleWaitingForBite();
