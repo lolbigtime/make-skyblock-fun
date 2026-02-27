@@ -13,10 +13,6 @@ public class MacroConfig {
     private static final Path CONFIG_PATH = FabricLoader.getInstance()
             .getConfigDir().resolve("fishingmacro.json");
 
-    // Hotbar slots (0-indexed)
-    public static int weaponSlot = 0;
-    public static int rodSlot = 1;
-
     // Combat
     public static boolean useHyperion = true;
     public static int killTimeoutMs = 10000;
@@ -51,8 +47,6 @@ public class MacroConfig {
     public static int rotationBaseTimeMs = 400;
 
     private static class ConfigData {
-        int weaponSlot = MacroConfig.weaponSlot;
-        int rodSlot = MacroConfig.rodSlot;
         boolean useHyperion = MacroConfig.useHyperion;
         int killTimeoutMs = MacroConfig.killTimeoutMs;
         int reelDelayMinMs = MacroConfig.reelDelayMinMs;
@@ -77,8 +71,6 @@ public class MacroConfig {
             String json = Files.readString(CONFIG_PATH);
             ConfigData data = GSON.fromJson(json, ConfigData.class);
             if (data == null) return;
-            weaponSlot = data.weaponSlot;
-            rodSlot = data.rodSlot;
             useHyperion = data.useHyperion;
             killTimeoutMs = data.killTimeoutMs;
             reelDelayMinMs = data.reelDelayMinMs;
@@ -99,8 +91,6 @@ public class MacroConfig {
 
     public static void save() {
         ConfigData data = new ConfigData();
-        data.weaponSlot = weaponSlot;
-        data.rodSlot = rodSlot;
         data.useHyperion = useHyperion;
         data.killTimeoutMs = killTimeoutMs;
         data.reelDelayMinMs = reelDelayMinMs;

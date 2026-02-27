@@ -11,6 +11,9 @@ import com.fishingmacro.util.Clock;
 import com.fishingmacro.util.MathUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.FishingRodItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
 
 import java.util.Optional;
 
@@ -33,6 +36,10 @@ public class FishingMacro {
     private final Clock killTimeout = new Clock();
     private boolean rodSlotSelected = false;
     private boolean lookedDown = false;
+    private final Clock meleeAimCooldown = new Clock();
+    private World savedWorld = null;
+    private int detectedRodSlot = 1;
+    private int detectedWeaponSlot = 0;
 
     public static FishingMacro getInstance() {
         if (instance == null) instance = new FishingMacro();
@@ -40,8 +47,10 @@ public class FishingMacro {
     }
 
     public void start() {
-        if (mc.player == null) return;
+        if (mc.player == null || mc.world == null) return;
         running = true;
+        savedWorld = mc.world;
+        scanHotbarForItems();
         returnHandler.savePosition();
         antiAfk.start();
         biteDetector.reset();
@@ -76,8 +85,17 @@ public class FishingMacro {
     public void onTick() {
         if (!running || mc.player == null || mc.world == null) return;
 
-        // Pause when a screen (menu/chat/inventory) is open
-        if (mc.currentScreen != null) return;
+        // Stop if world changed (server switch/disconnect)
+        if (mc.world != savedWorld) {
+            stop();
+            return;
+        }
+
+        // Close any open screen instead of pausing
+        if (mc.currentScreen != null) {
+            mc.setScreen(null);
+            return; // give one tick for the screen to close
+        }
 
         switch (state) {
             case CASTING -> handleCasting();
@@ -99,7 +117,7 @@ public class FishingMacro {
     private void handleCasting() {
         if (!stateTimer.isScheduled()) {
             // Make sure we're on the rod slot
-            KeySimulator.pressHotbar(MacroConfig.rodSlot);
+            KeySimulator.pressHotbar(detectedRodSlot);
             stateTimer.schedule(MathUtil.randomBetween(100, 200));
             return;
         }
@@ -116,19 +134,7 @@ public class FishingMacro {
         // Don't scan during initial delay after casting
         if (stateTimer.isScheduled() && !stateTimer.passed()) return;
 
-        // Check knockback first (highest priority)
-        if (returnHandler.isKnockedOff()) {
-            // Human reaction delay before responding to knockback
-            long reactionDelay = MathUtil.randomBetween(
-                    (long) MacroConfig.knockbackReactionMinMs,
-                    (long) MacroConfig.knockbackReactionMaxMs
-            );
-            stateTimer.schedule(reactionDelay);
-            changeState(MacroState.RETURNING_TO_SPOT);
-            return;
-        }
-
-        // Check for sea creatures
+        // Check for sea creatures first (kill before returning)
         Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
         if (creature.isPresent()) {
             targetCreature = creature.get();
@@ -138,6 +144,18 @@ public class FishingMacro {
                     (long) MacroConfig.reelDelayMaxMs
             ));
             changeState(MacroState.SEA_CREATURE_DETECTED);
+            return;
+        }
+
+        // Check knockback (after sea creature check so we kill first, then return)
+        if (returnHandler.isKnockedOff()) {
+            // Human reaction delay before responding to knockback
+            long reactionDelay = MathUtil.randomBetween(
+                    (long) MacroConfig.knockbackReactionMinMs,
+                    (long) MacroConfig.knockbackReactionMaxMs
+            );
+            stateTimer.schedule(reactionDelay);
+            changeState(MacroState.RETURNING_TO_SPOT);
             return;
         }
 
@@ -162,7 +180,7 @@ public class FishingMacro {
 
         // Ensure rod is selected before reeling
         if (!rodSlotSelected) {
-            KeySimulator.pressHotbar(MacroConfig.rodSlot);
+            KeySimulator.pressHotbar(detectedRodSlot);
             rodSlotSelected = true;
             stateTimer.schedule(MathUtil.randomBetween(50, 120));
             return;
@@ -185,7 +203,7 @@ public class FishingMacro {
 
         // Ensure rod is selected before casting
         if (!rodSlotSelected) {
-            KeySimulator.pressHotbar(MacroConfig.rodSlot);
+            KeySimulator.pressHotbar(detectedRodSlot);
             rodSlotSelected = true;
             stateTimer.schedule(MathUtil.randomBetween(50, 120));
             return;
@@ -209,7 +227,7 @@ public class FishingMacro {
     private void handleSwappingToWeapon() {
         if (!stateTimer.passed()) return;
 
-        KeySimulator.pressHotbar(MacroConfig.weaponSlot);
+        KeySimulator.pressHotbar(detectedWeaponSlot);
         hyperionAttempts = 0;
         lookedDown = false;
         killTimeout.schedule(MacroConfig.killTimeoutMs);
@@ -267,9 +285,11 @@ public class FishingMacro {
         // Walk toward creature and attack with humanized aim
         double dist = mc.player.squaredDistanceTo(targetCreature);
 
-        // Aim at creature with humanized rotation
-        if (!RotationHandler.getInstance().isRotating()) {
+        // Aim at creature with humanized rotation (cooldown between re-aims)
+        if (!RotationHandler.getInstance().isRotating()
+                && (!meleeAimCooldown.isScheduled() || meleeAimCooldown.passed())) {
             RotationHandler.getInstance().easeToEntity(targetCreature);
+            meleeAimCooldown.schedule(MathUtil.randomBetween(200, 400));
         }
 
         // Walk toward if too far
@@ -308,13 +328,21 @@ public class FishingMacro {
         KeySimulator.releaseKey(mc.options.sprintKey);
         KeySimulator.releaseKey(mc.options.attackKey);
 
-        KeySimulator.pressHotbar(MacroConfig.rodSlot);
+        KeySimulator.pressHotbar(detectedRodSlot);
         targetCreature = null;
         attackTimer.reset();
         killTimeout.reset();
+        meleeAimCooldown.reset();
         rodSlotSelected = false;
-        stateTimer.schedule(MathUtil.randomBetween(200, 400));
-        changeState(MacroState.CASTING);
+
+        // If knocked off during combat, return to spot before casting
+        if (returnHandler.isKnockedOff()) {
+            stateTimer.schedule(MathUtil.randomBetween(200, 400));
+            changeState(MacroState.RETURNING_TO_SPOT);
+        } else {
+            stateTimer.schedule(MathUtil.randomBetween(200, 400));
+            changeState(MacroState.CASTING);
+        }
     }
 
     private void handleReturning() {
@@ -354,6 +382,30 @@ public class FishingMacro {
             ));
             changeState(MacroState.CASTING);
         }
+    }
+
+    private void scanHotbarForItems() {
+        if (mc.player == null) return;
+
+        // Defaults if items not found
+        detectedRodSlot = 1;
+        detectedWeaponSlot = 0;
+
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = mc.player.getInventory().getStack(i);
+            if (stack.isEmpty()) continue;
+
+            if (stack.getItem() instanceof FishingRodItem) {
+                detectedRodSlot = i;
+            }
+
+            if (stack.getName().getString().toLowerCase().contains("hyperion")) {
+                detectedWeaponSlot = i;
+            }
+        }
+
+        System.out.println("[FishingMacro] Detected rod slot: " + detectedRodSlot
+                + ", weapon slot: " + detectedWeaponSlot);
     }
 
     private void changeState(MacroState newState) {

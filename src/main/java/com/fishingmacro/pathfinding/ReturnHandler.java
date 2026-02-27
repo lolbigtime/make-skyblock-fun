@@ -2,6 +2,7 @@ package com.fishingmacro.pathfinding;
 
 import com.fishingmacro.config.MacroConfig;
 import com.fishingmacro.handler.RotationHandler;
+import com.fishingmacro.util.Clock;
 import com.fishingmacro.util.MathUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.BlockPos;
@@ -26,6 +27,7 @@ public class ReturnHandler {
     private boolean returning = false;
     private boolean baritoneAvailable = false;
     private Object baritoneProcess = null;
+    private final Clock rotationCooldown = new Clock();
 
     public void savePosition() {
         if (mc.player == null) return;
@@ -87,8 +89,8 @@ public class ReturnHandler {
     }
 
     public void restoreRotation() {
-        RotationHandler.getInstance().easeTo(savedYaw, savedPitch,
-                (long) MathUtil.randomFloat(300, 600));
+        RotationHandler.getInstance().easeSmoothTo(savedYaw, savedPitch,
+                (long) MathUtil.randomFloat(400, 700));
     }
 
     public void stopReturn() {
@@ -211,18 +213,21 @@ public class ReturnHandler {
         // Point toward saved position
         if (mc.player == null || savedPos == null) return;
         float[] rot = RotationHandler.getInstance().getRotationTo(savedPos);
-        RotationHandler.getInstance().easeTo(rot[0], rot[1],
-                (long) MathUtil.randomFloat(300, 500));
+        RotationHandler.getInstance().easeSmoothTo(rot[0], rot[1],
+                (long) MathUtil.randomFloat(500, 800));
+        rotationCooldown.schedule(MathUtil.randomBetween(300, 500));
     }
 
     private void tickSimpleWalkBack() {
         if (mc.player == null || savedPos == null) return;
 
-        // Re-aim toward target periodically
-        if (!RotationHandler.getInstance().isRotating()) {
+        // Re-aim toward target with cooldown between recalculations
+        if (!RotationHandler.getInstance().isRotating()
+                && (!rotationCooldown.isScheduled() || rotationCooldown.passed())) {
             float[] rot = RotationHandler.getInstance().getRotationTo(savedPos);
-            RotationHandler.getInstance().easeTo(rot[0], rot[1],
-                    (long) MathUtil.randomFloat(150, 300));
+            RotationHandler.getInstance().easeSmoothTo(rot[0], rot[1],
+                    (long) MathUtil.randomFloat(400, 700));
+            rotationCooldown.schedule(MathUtil.randomBetween(300, 500));
         }
 
         // Hold W key to walk forward

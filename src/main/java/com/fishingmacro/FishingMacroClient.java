@@ -47,6 +47,12 @@ public class FishingMacroClient implements ClientModInitializer {
             }
         }
 
+        // Stop macro on server disconnect
+        if (FishingMacro.getInstance().isRunning() && client.getNetworkHandler() == null) {
+            FishingMacro.getInstance().stop();
+            sendMessage(client, "Disconnected - macro stopped", Formatting.RED);
+        }
+
         FishingMacro.getInstance().onTick();
         RotationHandler.getInstance().onTick();
     }

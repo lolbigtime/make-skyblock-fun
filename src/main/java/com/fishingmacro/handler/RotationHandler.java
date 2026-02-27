@@ -105,9 +105,18 @@ public class RotationHandler {
         if (mc.player == null || target == null) return;
         float[] rot = getHumanizedRotationTo(target);
         float dist = (float) mc.player.getEntityPos().distanceTo(target.getEntityPos());
-        long duration = (long) (MacroConfig.rotationBaseTimeMs * MathUtil.randomFloat(0.8f, 1.2f));
+        long duration = (long) (MacroConfig.rotationBaseTimeMs * 1.3f * MathUtil.randomFloat(0.85f, 1.2f));
         if (dist > 8) duration = (long) (duration * 1.3f);
         easeTo(rot[0], rot[1], duration);
+    }
+
+    public void easeSmoothToEntity(Entity target) {
+        if (mc.player == null || target == null) return;
+        float[] rot = getHumanizedRotationTo(target);
+        float dist = (float) mc.player.getEntityPos().distanceTo(target.getEntityPos());
+        long duration = (long) (MacroConfig.rotationBaseTimeMs * 1.4f * MathUtil.randomFloat(0.85f, 1.15f));
+        if (dist > 8) duration = (long) (duration * 1.3f);
+        easeSmoothTo(rot[0], rot[1], duration);
     }
 
     public void lookDownAtFloor() {

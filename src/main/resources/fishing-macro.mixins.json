@@ -4,7 +4,8 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "KeyBindingAccessor",
-    "MinecraftClientAccessor"
+    "MinecraftClientAccessor",
+    "MouseMixin"
   ],
   "injectors": {
     "defaultRequire": 1
