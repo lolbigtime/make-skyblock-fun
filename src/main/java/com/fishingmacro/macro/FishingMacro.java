@@ -4,13 +4,17 @@ import com.fishingmacro.config.MacroConfig;
 import com.fishingmacro.feature.AntiAfk;
 import com.fishingmacro.feature.BiteDetector;
 import com.fishingmacro.feature.ChatSeaCreatureDetector;
+import com.fishingmacro.feature.FailsafeHandler;
 import com.fishingmacro.feature.SeaCreatureDetector;
+import com.fishingmacro.gui.MainMenuScreen;
+import com.fishingmacro.gui.SettingsScreen;
 import com.fishingmacro.handler.KeySimulator;
 import com.fishingmacro.handler.RotationHandler;
 import com.fishingmacro.pathfinding.ReturnHandler;
 import com.fishingmacro.util.Clock;
 import com.fishingmacro.util.MathUtil;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.FishingRodItem;
 import net.minecraft.item.ItemStack;
@@ -73,6 +77,7 @@ public class FishingMacro {
         returnHandler.reset();
         antiAfk.reset();
         biteDetector.reset();
+        FailsafeHandler.getInstance().reset();
         targetCreature = null;
         rodSlotSelected = false;
         if (chatSeaCreatureDetector != null) chatSeaCreatureDetector.reset();
@@ -91,6 +96,14 @@ public class FishingMacro {
         return returnHandler;
     }
 
+    public int getDetectedRodSlot() {
+        return detectedRodSlot;
+    }
+
+    public int getDetectedWeaponSlot() {
+        return detectedWeaponSlot;
+    }
+
     public void onTick() {
         if (!running || mc.player == null || mc.world == null) return;
 
@@ -100,11 +113,18 @@ public class FishingMacro {
             return;
         }
 
-        // Close any open screen instead of pausing
-        if (mc.currentScreen != null) {
+        // Close any open screen instead of pausing (but don't close our own screens)
+        Screen currentScreen = mc.currentScreen;
+        if (currentScreen != null
+                && !(currentScreen instanceof MainMenuScreen)
+                && !(currentScreen instanceof SettingsScreen)) {
             mc.setScreen(null);
             return; // give one tick for the screen to close
         }
+
+        // Failsafe check before state dispatch
+        FailsafeHandler.getInstance().onTick();
+        if (!running) return; // failsafe may have stopped the macro
 
         switch (state) {
             case CASTING -> handleCasting();

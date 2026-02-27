@@ -2,6 +2,8 @@ package com.fishingmacro;
 
 import com.fishingmacro.config.MacroConfig;
 import com.fishingmacro.feature.ChatSeaCreatureDetector;
+import com.fishingmacro.feature.RotationTestMode;
+import com.fishingmacro.gui.MainMenuScreen;
 import com.fishingmacro.handler.RotationHandler;
 import com.fishingmacro.macro.FishingMacro;
 import com.fishingmacro.render.RenderHandler;
@@ -20,6 +22,7 @@ import org.lwjgl.glfw.GLFW;
 public class FishingMacroClient implements ClientModInitializer {
     public static final String MOD_ID = "fishingmacro";
     public static KeyBinding toggleKey;
+    public static KeyBinding menuKey;
 
     private final ChatSeaCreatureDetector chatSeaCreatureDetector = new ChatSeaCreatureDetector();
 
@@ -31,6 +34,13 @@ public class FishingMacroClient implements ClientModInitializer {
                 "key.fishingmacro.toggle",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
+                KeyBinding.Category.create(Identifier.of(MOD_ID, "category"))
+        ));
+
+        menuKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.fishingmacro.menu",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_RIGHT_SHIFT,
                 KeyBinding.Category.create(Identifier.of(MOD_ID, "category"))
         ));
 
@@ -60,6 +70,10 @@ public class FishingMacroClient implements ClientModInitializer {
             }
         }
 
+        if (menuKey.wasPressed()) {
+            client.setScreen(new MainMenuScreen());
+        }
+
         // Stop macro on server disconnect
         if (FishingMacro.getInstance().isRunning() && client.getNetworkHandler() == null) {
             FishingMacro.getInstance().stop();
@@ -68,6 +82,7 @@ public class FishingMacroClient implements ClientModInitializer {
 
         FishingMacro.getInstance().onTick();
         RotationHandler.getInstance().onTick();
+        RotationTestMode.getInstance().onTick();
     }
 
     private void sendMessage(MinecraftClient client, String message, Formatting color) {

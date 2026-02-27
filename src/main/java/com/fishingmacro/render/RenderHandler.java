@@ -1,5 +1,7 @@
 package com.fishingmacro.render;
 
+import com.fishingmacro.config.MacroConfig;
+import com.fishingmacro.feature.RotationTestMode;
 import com.fishingmacro.macro.FishingMacro;
 import com.fishingmacro.macro.MacroState;
 import com.fishingmacro.pathfinding.ReturnHandler;
@@ -35,6 +37,12 @@ public class RenderHandler {
     // --- HUD Overlay (top-left corner) ---
 
     private void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+        // Rotation test mode HUD
+        RotationTestMode testMode = RotationTestMode.getInstance();
+        if (testMode.isRunning()) {
+            renderTestModeHud(context);
+        }
+
         FishingMacro macro = FishingMacro.getInstance();
         if (!macro.isRunning()) return;
 
@@ -74,6 +82,44 @@ public class RenderHandler {
                     0xAA000000);
             context.drawText(textRenderer, distText, distX, distY, 0xFFFF8800, true);
         }
+    }
+
+    private void renderTestModeHud(DrawContext context) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        TextRenderer textRenderer = mc.textRenderer;
+
+        RotationTestMode testMode = RotationTestMode.getInstance();
+        String title = "ROTATION TEST";
+        String stepText = "Step " + (testMode.getStep() + 1) + "/" + testMode.getTotalSteps()
+                + ": " + testMode.getCurrentStepName();
+        String speedText = "Speed: " + MacroConfig.rotationBaseTimeMs + " ms";
+
+        int padding = 4;
+        int x = padding + 4;
+        int y = 4;
+
+        // Title background
+        int titleWidth = textRenderer.getWidth(title);
+        context.fill(x - padding, y - padding,
+                x + titleWidth + padding, y + textRenderer.fontHeight + padding,
+                0xAA000000);
+        context.drawText(textRenderer, title, x, y, 0xFFFF5555, true);
+
+        // Step info
+        y += textRenderer.fontHeight + padding + 2;
+        int stepWidth = textRenderer.getWidth(stepText);
+        context.fill(x - padding, y - padding,
+                x + stepWidth + padding, y + textRenderer.fontHeight + padding,
+                0xAA000000);
+        context.drawText(textRenderer, stepText, x, y, 0xFFFFFF55, true);
+
+        // Speed info
+        y += textRenderer.fontHeight + padding + 2;
+        int speedWidth = textRenderer.getWidth(speedText);
+        context.fill(x - padding, y - padding,
+                x + speedWidth + padding, y + textRenderer.fontHeight + padding,
+                0xAA000000);
+        context.drawText(textRenderer, speedText, x, y, 0xFFAAAAAA, true);
     }
 
     private int getStateColor(MacroState state) {

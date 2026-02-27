@@ -51,6 +51,11 @@ public class MacroConfig {
     // Rotation
     public static int rotationBaseTimeMs = 400;
 
+    // Failsafe
+    public static boolean failsafeEnabled = true;
+    public static double failsafeTeleportThreshold = 4.0;
+    public static float failsafeRotationThreshold = 15.0f;
+
     private static class ConfigData {
         boolean useHyperion = MacroConfig.useHyperion;
         int killTimeoutMs = MacroConfig.killTimeoutMs;
@@ -62,14 +67,23 @@ public class MacroConfig {
         int castDelayMaxMs = MacroConfig.castDelayMaxMs;
         int postReelDelayMinMs = MacroConfig.postReelDelayMinMs;
         int postReelDelayMaxMs = MacroConfig.postReelDelayMaxMs;
+        int meleeCpsMin = MacroConfig.meleeCpsMin;
+        int meleeCpsMax = MacroConfig.meleeCpsMax;
         int antiAfkMinIntervalMs = MacroConfig.antiAfkMinIntervalMs;
         int antiAfkMaxIntervalMs = MacroConfig.antiAfkMaxIntervalMs;
+        float antiAfkMaxYawDrift = MacroConfig.antiAfkMaxYawDrift;
+        float antiAfkMaxPitchDrift = MacroConfig.antiAfkMaxPitchDrift;
         double knockbackThreshold = MacroConfig.knockbackThreshold;
+        int knockbackReactionMinMs = MacroConfig.knockbackReactionMinMs;
+        int knockbackReactionMaxMs = MacroConfig.knockbackReactionMaxMs;
         int returnTimeoutMs = MacroConfig.returnTimeoutMs;
         int returnStuckThresholdTicks = MacroConfig.returnStuckThresholdTicks;
         int returnMaxStuckAttempts = MacroConfig.returnMaxStuckAttempts;
         double seaCreatureDetectionRadius = MacroConfig.seaCreatureDetectionRadius;
         int rotationBaseTimeMs = MacroConfig.rotationBaseTimeMs;
+        boolean failsafeEnabled = MacroConfig.failsafeEnabled;
+        double failsafeTeleportThreshold = MacroConfig.failsafeTeleportThreshold;
+        float failsafeRotationThreshold = MacroConfig.failsafeRotationThreshold;
     }
 
     public static void load() {
@@ -91,14 +105,23 @@ public class MacroConfig {
             castDelayMaxMs = data.castDelayMaxMs;
             postReelDelayMinMs = data.postReelDelayMinMs;
             postReelDelayMaxMs = data.postReelDelayMaxMs;
+            meleeCpsMin = data.meleeCpsMin;
+            meleeCpsMax = data.meleeCpsMax;
             antiAfkMinIntervalMs = data.antiAfkMinIntervalMs;
             antiAfkMaxIntervalMs = data.antiAfkMaxIntervalMs;
+            antiAfkMaxYawDrift = data.antiAfkMaxYawDrift;
+            antiAfkMaxPitchDrift = data.antiAfkMaxPitchDrift;
             knockbackThreshold = data.knockbackThreshold;
+            knockbackReactionMinMs = data.knockbackReactionMinMs;
+            knockbackReactionMaxMs = data.knockbackReactionMaxMs;
             returnTimeoutMs = data.returnTimeoutMs;
             returnStuckThresholdTicks = data.returnStuckThresholdTicks;
             returnMaxStuckAttempts = data.returnMaxStuckAttempts;
             seaCreatureDetectionRadius = data.seaCreatureDetectionRadius;
             rotationBaseTimeMs = data.rotationBaseTimeMs;
+            failsafeEnabled = data.failsafeEnabled;
+            failsafeTeleportThreshold = data.failsafeTeleportThreshold;
+            failsafeRotationThreshold = data.failsafeRotationThreshold;
         } catch (IOException e) {
             System.err.println("[FishingMacro] Failed to load config: " + e.getMessage());
         }
@@ -116,14 +139,23 @@ public class MacroConfig {
         data.castDelayMaxMs = castDelayMaxMs;
         data.postReelDelayMinMs = postReelDelayMinMs;
         data.postReelDelayMaxMs = postReelDelayMaxMs;
+        data.meleeCpsMin = meleeCpsMin;
+        data.meleeCpsMax = meleeCpsMax;
         data.antiAfkMinIntervalMs = antiAfkMinIntervalMs;
         data.antiAfkMaxIntervalMs = antiAfkMaxIntervalMs;
+        data.antiAfkMaxYawDrift = antiAfkMaxYawDrift;
+        data.antiAfkMaxPitchDrift = antiAfkMaxPitchDrift;
         data.knockbackThreshold = knockbackThreshold;
+        data.knockbackReactionMinMs = knockbackReactionMinMs;
+        data.knockbackReactionMaxMs = knockbackReactionMaxMs;
         data.returnTimeoutMs = returnTimeoutMs;
         data.returnStuckThresholdTicks = returnStuckThresholdTicks;
         data.returnMaxStuckAttempts = returnMaxStuckAttempts;
         data.seaCreatureDetectionRadius = seaCreatureDetectionRadius;
         data.rotationBaseTimeMs = rotationBaseTimeMs;
+        data.failsafeEnabled = failsafeEnabled;
+        data.failsafeTeleportThreshold = failsafeTeleportThreshold;
+        data.failsafeRotationThreshold = failsafeRotationThreshold;
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             Files.writeString(CONFIG_PATH, GSON.toJson(data));
