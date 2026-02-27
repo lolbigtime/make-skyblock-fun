@@ -3,6 +3,7 @@ package com.fishingmacro.macro;
 import com.fishingmacro.config.MacroConfig;
 import com.fishingmacro.feature.AntiAfk;
 import com.fishingmacro.feature.BiteDetector;
+import com.fishingmacro.feature.ChatSeaCreatureDetector;
 import com.fishingmacro.feature.SeaCreatureDetector;
 import com.fishingmacro.handler.KeySimulator;
 import com.fishingmacro.handler.RotationHandler;
@@ -28,6 +29,7 @@ public class FishingMacro {
     private final SeaCreatureDetector seaCreatureDetector = new SeaCreatureDetector();
     private final AntiAfk antiAfk = new AntiAfk();
     private final ReturnHandler returnHandler = new ReturnHandler();
+    private ChatSeaCreatureDetector chatSeaCreatureDetector;
 
     private final Clock stateTimer = new Clock();
     private LivingEntity targetCreature = null;
@@ -46,6 +48,10 @@ public class FishingMacro {
         return instance;
     }
 
+    public void setChatSeaCreatureDetector(ChatSeaCreatureDetector detector) {
+        this.chatSeaCreatureDetector = detector;
+    }
+
     public void start() {
         if (mc.player == null || mc.world == null) return;
         running = true;
@@ -55,6 +61,7 @@ public class FishingMacro {
         antiAfk.start();
         biteDetector.reset();
         rodSlotSelected = false;
+        if (chatSeaCreatureDetector != null) chatSeaCreatureDetector.reset();
         changeState(MacroState.CASTING);
     }
 
@@ -67,6 +74,7 @@ public class FishingMacro {
         biteDetector.reset();
         targetCreature = null;
         rodSlotSelected = false;
+        if (chatSeaCreatureDetector != null) chatSeaCreatureDetector.reset();
         changeState(MacroState.IDLE);
     }
 
@@ -134,17 +142,35 @@ public class FishingMacro {
         // Don't scan during initial delay after casting
         if (stateTimer.isScheduled() && !stateTimer.passed()) return;
 
-        // Check for sea creatures first (kill before returning)
-        Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
-        if (creature.isPresent()) {
-            targetCreature = creature.get();
-            // Human reaction delay
-            stateTimer.schedule(MathUtil.randomBetween(
-                    (long) MacroConfig.reelDelayMinMs,
-                    (long) MacroConfig.reelDelayMaxMs
-            ));
-            changeState(MacroState.SEA_CREATURE_DETECTED);
-            return;
+        // Check for sea creatures - chat-based detection first, then entity scan to find target
+        boolean chatAlert = chatSeaCreatureDetector != null && chatSeaCreatureDetector.hasSeaCreatureAlert();
+        if (chatAlert) {
+            // Chat detected a catch - use entity scanner to find the target
+            Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
+            if (creature.isPresent()) {
+                targetCreature = creature.get();
+                stateTimer.schedule(MathUtil.randomBetween(
+                        (long) MacroConfig.reelDelayMinMs,
+                        (long) MacroConfig.reelDelayMaxMs
+                ));
+                changeState(MacroState.SEA_CREATURE_DETECTED);
+                if (chatSeaCreatureDetector != null) chatSeaCreatureDetector.reset();
+                return;
+            }
+        }
+
+        // Fallback: entity-only detection (no chat message)
+        if (!chatAlert) {
+            Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
+            if (creature.isPresent()) {
+                targetCreature = creature.get();
+                stateTimer.schedule(MathUtil.randomBetween(
+                        (long) MacroConfig.reelDelayMinMs,
+                        (long) MacroConfig.reelDelayMaxMs
+                ));
+                changeState(MacroState.SEA_CREATURE_DETECTED);
+                return;
+            }
         }
 
         // Check knockback (after sea creature check so we kill first, then return)
@@ -220,7 +246,7 @@ public class FishingMacro {
 
         // Reel in the rod first (right-click to pull rod back)
         KeySimulator.rightClick();
-        stateTimer.schedule(MathUtil.randomBetween(100, 250));
+        stateTimer.schedule(MathUtil.randomBetween(50, 150));
         changeState(MacroState.SWAPPING_TO_WEAPON);
     }
 
@@ -231,7 +257,7 @@ public class FishingMacro {
         hyperionAttempts = 0;
         lookedDown = false;
         killTimeout.schedule(MacroConfig.killTimeoutMs);
-        stateTimer.schedule(MathUtil.randomBetween(100, 200));
+        stateTimer.schedule(MathUtil.randomBetween(50, 120));
         changeState(MacroState.KILLING);
     }
 
@@ -285,8 +311,8 @@ public class FishingMacro {
         // Walk toward creature and attack with humanized aim
         double dist = mc.player.squaredDistanceTo(targetCreature);
 
-        // Aim at creature with humanized rotation (cooldown between re-aims)
-        if (!RotationHandler.getInstance().isRotating()
+        // Skip re-aiming when creature is very close (< 2 blocks = 4.0 sq dist)
+        if (dist >= 4.0 && !RotationHandler.getInstance().isRotating()
                 && (!meleeAimCooldown.isScheduled() || meleeAimCooldown.passed())) {
             RotationHandler.getInstance().easeToEntity(targetCreature);
             meleeAimCooldown.schedule(MathUtil.randomBetween(200, 400));
@@ -354,9 +380,12 @@ public class FishingMacro {
 
         returnHandler.onTick();
 
-        if (returnHandler.hasArrived()) {
+        if (returnHandler.hasArrived() || returnHandler.hasTimedOut()) {
             KeySimulator.releaseKey(mc.options.forwardKey);
             KeySimulator.releaseKey(mc.options.sprintKey);
+            KeySimulator.releaseKey(mc.options.jumpKey);
+            KeySimulator.releaseKey(mc.options.leftKey);
+            KeySimulator.releaseKey(mc.options.rightKey);
             returnHandler.stopReturn();
             rodSlotSelected = false;
             stateTimer.schedule(MathUtil.randomBetween(100, 300));

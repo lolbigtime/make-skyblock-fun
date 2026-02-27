@@ -16,7 +16,7 @@ public class MacroConfig {
     // Combat
     public static boolean useHyperion = true;
     public static int killTimeoutMs = 10000;
-    public static int hyperionRetryDelayMs = 500;
+    public static int hyperionRetryDelayMs = 300;
     public static int hyperionMaxAttempts = 3;
     public static int meleeCpsMin = 8;
     public static int meleeCpsMax = 12;
@@ -40,6 +40,11 @@ public class MacroConfig {
     public static int knockbackReactionMinMs = 200;
     public static int knockbackReactionMaxMs = 600;
 
+    // Return pathfinding
+    public static int returnTimeoutMs = 15000;
+    public static int returnStuckThresholdTicks = 15;
+    public static int returnMaxStuckAttempts = 6;
+
     // Sea creature detection
     public static double seaCreatureDetectionRadius = 10.0;
 
@@ -49,6 +54,7 @@ public class MacroConfig {
     private static class ConfigData {
         boolean useHyperion = MacroConfig.useHyperion;
         int killTimeoutMs = MacroConfig.killTimeoutMs;
+        int hyperionRetryDelayMs = MacroConfig.hyperionRetryDelayMs;
         int reelDelayMinMs = MacroConfig.reelDelayMinMs;
         int reelDelayMaxMs = MacroConfig.reelDelayMaxMs;
         int castDelayMinMs = MacroConfig.castDelayMinMs;
@@ -58,6 +64,9 @@ public class MacroConfig {
         int antiAfkMinIntervalMs = MacroConfig.antiAfkMinIntervalMs;
         int antiAfkMaxIntervalMs = MacroConfig.antiAfkMaxIntervalMs;
         double knockbackThreshold = MacroConfig.knockbackThreshold;
+        int returnTimeoutMs = MacroConfig.returnTimeoutMs;
+        int returnStuckThresholdTicks = MacroConfig.returnStuckThresholdTicks;
+        int returnMaxStuckAttempts = MacroConfig.returnMaxStuckAttempts;
         double seaCreatureDetectionRadius = MacroConfig.seaCreatureDetectionRadius;
         int rotationBaseTimeMs = MacroConfig.rotationBaseTimeMs;
     }
@@ -73,6 +82,7 @@ public class MacroConfig {
             if (data == null) return;
             useHyperion = data.useHyperion;
             killTimeoutMs = data.killTimeoutMs;
+            hyperionRetryDelayMs = data.hyperionRetryDelayMs;
             reelDelayMinMs = data.reelDelayMinMs;
             reelDelayMaxMs = data.reelDelayMaxMs;
             castDelayMinMs = data.castDelayMinMs;
@@ -82,6 +92,9 @@ public class MacroConfig {
             antiAfkMinIntervalMs = data.antiAfkMinIntervalMs;
             antiAfkMaxIntervalMs = data.antiAfkMaxIntervalMs;
             knockbackThreshold = data.knockbackThreshold;
+            returnTimeoutMs = data.returnTimeoutMs;
+            returnStuckThresholdTicks = data.returnStuckThresholdTicks;
+            returnMaxStuckAttempts = data.returnMaxStuckAttempts;
             seaCreatureDetectionRadius = data.seaCreatureDetectionRadius;
             rotationBaseTimeMs = data.rotationBaseTimeMs;
         } catch (IOException e) {
@@ -93,6 +106,7 @@ public class MacroConfig {
         ConfigData data = new ConfigData();
         data.useHyperion = useHyperion;
         data.killTimeoutMs = killTimeoutMs;
+        data.hyperionRetryDelayMs = hyperionRetryDelayMs;
         data.reelDelayMinMs = reelDelayMinMs;
         data.reelDelayMaxMs = reelDelayMaxMs;
         data.castDelayMinMs = castDelayMinMs;
@@ -102,6 +116,9 @@ public class MacroConfig {
         data.antiAfkMinIntervalMs = antiAfkMinIntervalMs;
         data.antiAfkMaxIntervalMs = antiAfkMaxIntervalMs;
         data.knockbackThreshold = knockbackThreshold;
+        data.returnTimeoutMs = returnTimeoutMs;
+        data.returnStuckThresholdTicks = returnStuckThresholdTicks;
+        data.returnMaxStuckAttempts = returnMaxStuckAttempts;
         data.seaCreatureDetectionRadius = seaCreatureDetectionRadius;
         data.rotationBaseTimeMs = rotationBaseTimeMs;
         try {

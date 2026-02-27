@@ -123,7 +123,7 @@ public class RotationHandler {
         if (mc.player == null) return;
         float pitch = MathUtil.randomFloat(78.0f, 85.0f);
         float yaw = mc.player.getYaw() + MathUtil.randomFloat(-2.0f, 2.0f);
-        easeTo(yaw, pitch, (long) (MacroConfig.rotationBaseTimeMs * 0.7f));
+        easeTo(yaw, pitch, (long) (MacroConfig.rotationBaseTimeMs * 0.4f));
     }
 
     public void onTick() {
@@ -208,7 +208,7 @@ public class RotationHandler {
         double dx = target.x - eyePos.x;
         double dy = target.y - eyePos.y;
         double dz = target.z - eyePos.z;
-        double dist = Math.sqrt(dx * dx + dz * dz);
+        double dist = Math.max(0.5, Math.sqrt(dx * dx + dz * dz));
 
         float yaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90.0f;
         float pitch = (float) -Math.toDegrees(Math.atan2(dy, dist));

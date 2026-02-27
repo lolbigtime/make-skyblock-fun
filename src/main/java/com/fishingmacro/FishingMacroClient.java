@@ -1,12 +1,14 @@
 package com.fishingmacro;
 
 import com.fishingmacro.config.MacroConfig;
+import com.fishingmacro.feature.ChatSeaCreatureDetector;
 import com.fishingmacro.handler.RotationHandler;
 import com.fishingmacro.macro.FishingMacro;
 import com.fishingmacro.render.RenderHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
@@ -19,6 +21,8 @@ public class FishingMacroClient implements ClientModInitializer {
     public static final String MOD_ID = "fishingmacro";
     public static KeyBinding toggleKey;
 
+    private final ChatSeaCreatureDetector chatSeaCreatureDetector = new ChatSeaCreatureDetector();
+
     @Override
     public void onInitializeClient() {
         MacroConfig.load();
@@ -29,6 +33,15 @@ public class FishingMacroClient implements ClientModInitializer {
                 GLFW.GLFW_KEY_UNKNOWN,
                 KeyBinding.Category.create(Identifier.of(MOD_ID, "category"))
         ));
+
+        // Wire up chat-based sea creature detection
+        FishingMacro.getInstance().setChatSeaCreatureDetector(chatSeaCreatureDetector);
+
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            if (FishingMacro.getInstance().isRunning()) {
+                chatSeaCreatureDetector.onChatMessage(message.getString());
+            }
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
 

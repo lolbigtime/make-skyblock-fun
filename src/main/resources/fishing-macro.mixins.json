@@ -5,7 +5,8 @@
   "client": [
     "KeyBindingAccessor",
     "MinecraftClientAccessor",
-    "MouseMixin"
+    "MouseMixin",
+    "WindowFocusMixin"
   ],
   "injectors": {
     "defaultRequire": 1
