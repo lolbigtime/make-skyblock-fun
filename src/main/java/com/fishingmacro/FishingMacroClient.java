@@ -30,18 +30,20 @@ public class FishingMacroClient implements ClientModInitializer {
     public void onInitializeClient() {
         MacroConfig.load();
 
+        var category = KeyBinding.Category.create(Identifier.of(MOD_ID, "category"));
+
         toggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.fishingmacro.toggle",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
-                KeyBinding.Category.create(Identifier.of(MOD_ID, "category"))
+                category
         ));
 
         menuKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.fishingmacro.menu",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_RIGHT_SHIFT,
-                KeyBinding.Category.create(Identifier.of(MOD_ID, "category"))
+                category
         ));
 
         // Wire up chat-based sea creature detection

@@ -248,6 +248,23 @@ public class FishingMacro {
     private void handleReCasting() {
         if (!stateTimer.passed()) return;
 
+        // Check if a sea creature spawned while we were reeling — skip recast and go straight to killing
+        if (chatSeaCreatureDetector != null && chatSeaCreatureDetector.hasSeaCreatureAlert()) {
+            Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
+            if (creature.isPresent()) {
+                targetCreature = creature.get();
+                chatSeaCreatureDetector.reset();
+                // Rod is already reeled in from REELING state, go straight to weapon swap
+                KeySimulator.pressHotbar(detectedWeaponSlot);
+                hyperionAttempts = 0;
+                lookedDown = false;
+                killTimeout.schedule(MacroConfig.killTimeoutMs);
+                stateTimer.schedule(MathUtil.randomBetween(50, 120));
+                changeState(MacroState.KILLING);
+                return;
+            }
+        }
+
         // Ensure rod is selected before casting
         if (!rodSlotSelected) {
             KeySimulator.pressHotbar(detectedRodSlot);
