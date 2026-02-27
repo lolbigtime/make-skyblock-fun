@@ -38,6 +38,7 @@ public class FishingMacro {
     private final Clock killTimeout = new Clock();
     private boolean rodSlotSelected = false;
     private boolean lookedDown = false;
+    private boolean rotationRestored = false;
     private final Clock meleeAimCooldown = new Clock();
     private World savedWorld = null;
     private int detectedRodSlot = 1;
@@ -388,6 +389,7 @@ public class FishingMacro {
             KeySimulator.releaseKey(mc.options.rightKey);
             returnHandler.stopReturn();
             rodSlotSelected = false;
+            rotationRestored = false;
             stateTimer.schedule(MathUtil.randomBetween(100, 300));
             changeState(MacroState.RESUMING);
         }
@@ -396,9 +398,9 @@ public class FishingMacro {
     private void handleResuming() {
         if (!stateTimer.passed()) return;
 
-        if (!RotationHandler.getInstance().isRotating()) {
-            // First tick: restore rotation
+        if (!rotationRestored) {
             returnHandler.restoreRotation();
+            rotationRestored = true;
             stateTimer.schedule(50);
             return;
         }
