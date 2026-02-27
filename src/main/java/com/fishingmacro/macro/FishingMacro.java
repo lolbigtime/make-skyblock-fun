@@ -270,8 +270,11 @@ public class FishingMacro {
             return;
         }
 
-        // Timeout
+        // Timeout - blacklist the entity so we don't re-target it
         if (killTimeout.passed()) {
+            if (targetCreature != null) {
+                seaCreatureDetector.blacklistEntity(targetCreature.getId());
+            }
             stateTimer.schedule(MathUtil.randomBetween(100, 200));
             changeState(MacroState.SWAPPING_TO_ROD);
             return;
@@ -302,7 +305,10 @@ public class FishingMacro {
         }
 
         if (hyperionAttempts >= MacroConfig.hyperionMaxAttempts) {
-            // Max attempts reached, move on
+            // Max attempts reached - blacklist the entity so we don't re-target it
+            if (targetCreature != null) {
+                seaCreatureDetector.blacklistEntity(targetCreature.getId());
+            }
             stateTimer.schedule(MathUtil.randomBetween(100, 300));
             changeState(MacroState.SWAPPING_TO_ROD);
         }

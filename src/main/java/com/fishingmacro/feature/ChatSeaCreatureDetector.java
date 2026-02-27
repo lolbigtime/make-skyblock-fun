@@ -1,6 +1,11 @@
 package com.fishingmacro.feature;
 
+import java.util.regex.Pattern;
+
 public class ChatSeaCreatureDetector {
+    private static final Pattern PLAYER_CHAT_PATTERN = Pattern.compile(
+        "^(?:(?:Party|Guild|Co-op|Officer|Friend) > )?(?:From |To )?(?:\\[\\S+] )?\\w{3,16}: "
+    );
     private static final String[] SEA_CREATURE_PATTERNS = {
         "appeared",
         "You caught a",
@@ -38,7 +43,12 @@ public class ChatSeaCreatureDetector {
     private boolean alertFired = false;
     private long alertTimestamp = 0;
 
+    private boolean isPlayerChat(String message) {
+        return PLAYER_CHAT_PATTERN.matcher(message).find();
+    }
+
     public void onChatMessage(String message) {
+        if (isPlayerChat(message)) return;
         for (String pattern : SEA_CREATURE_PATTERNS) {
             if (message.contains(pattern)) {
                 alertFired = true;

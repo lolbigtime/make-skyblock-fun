@@ -17,7 +17,7 @@ public class MacroConfig {
     public static boolean useHyperion = true;
     public static int killTimeoutMs = 10000;
     public static int hyperionRetryDelayMs = 300;
-    public static int hyperionMaxAttempts = 3;
+    public static int hyperionMaxAttempts = 7;
     public static int meleeCpsMin = 8;
     public static int meleeCpsMax = 12;
 
@@ -55,6 +55,7 @@ public class MacroConfig {
         boolean useHyperion = MacroConfig.useHyperion;
         int killTimeoutMs = MacroConfig.killTimeoutMs;
         int hyperionRetryDelayMs = MacroConfig.hyperionRetryDelayMs;
+        int hyperionMaxAttempts = MacroConfig.hyperionMaxAttempts;
         int reelDelayMinMs = MacroConfig.reelDelayMinMs;
         int reelDelayMaxMs = MacroConfig.reelDelayMaxMs;
         int castDelayMinMs = MacroConfig.castDelayMinMs;
@@ -83,6 +84,7 @@ public class MacroConfig {
             useHyperion = data.useHyperion;
             killTimeoutMs = data.killTimeoutMs;
             hyperionRetryDelayMs = data.hyperionRetryDelayMs;
+            hyperionMaxAttempts = data.hyperionMaxAttempts;
             reelDelayMinMs = data.reelDelayMinMs;
             reelDelayMaxMs = data.reelDelayMaxMs;
             castDelayMinMs = data.castDelayMinMs;
@@ -107,6 +109,7 @@ public class MacroConfig {
         data.useHyperion = useHyperion;
         data.killTimeoutMs = killTimeoutMs;
         data.hyperionRetryDelayMs = hyperionRetryDelayMs;
+        data.hyperionMaxAttempts = hyperionMaxAttempts;
         data.reelDelayMinMs = reelDelayMinMs;
         data.reelDelayMaxMs = reelDelayMaxMs;
         data.castDelayMinMs = castDelayMinMs;

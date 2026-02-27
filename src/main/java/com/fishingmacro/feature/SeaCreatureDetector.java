@@ -9,11 +9,21 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.player.PlayerEntity;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class SeaCreatureDetector {
     private static final MinecraftClient mc = MinecraftClient.getInstance();
+    private static final long BLACKLIST_DURATION_MS = 30_000;
+
+    private final Map<Integer, Long> blacklistedEntities = new HashMap<>();
+
+    public void blacklistEntity(int entityId) {
+        blacklistedEntities.put(entityId, System.currentTimeMillis() + BLACKLIST_DURATION_MS);
+    }
 
     public Optional<LivingEntity> detectSeaCreature() {
         if (mc.player == null || mc.world == null) return Optional.empty();
@@ -49,6 +59,17 @@ public class SeaCreatureDetector {
 
         // Must be alive
         if (entity.isDead()) return false;
+
+        // Skip blacklisted entities (failed kill attempts) and clean up expired entries
+        long now = System.currentTimeMillis();
+        Iterator<Map.Entry<Integer, Long>> it = blacklistedEntities.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, Long> entry = it.next();
+            if (entry.getValue() < now) {
+                it.remove();
+            }
+        }
+        if (blacklistedEntities.containsKey(entity.getId())) return false;
 
         return true;
     }
