@@ -78,10 +78,7 @@ public class AntiAfk {
     }
 
     private void scheduleNext() {
-        long interval = MathUtil.randomBetween(
-                (long) MacroConfig.antiAfkMinIntervalMs,
-                (long) MacroConfig.antiAfkMaxIntervalMs
-        );
-        timer.schedule(interval);
+        long[] range = MacroConfig.humanize(MacroConfig.antiAfkIntervalMs);
+        timer.schedule(MathUtil.randomBetween(range[0], range[1]));
     }
 }

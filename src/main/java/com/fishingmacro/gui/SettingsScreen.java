@@ -2,6 +2,7 @@ package com.fishingmacro.gui;
 
 import com.fishingmacro.config.MacroConfig;
 import com.fishingmacro.gui.widget.ConfigSliderWidget;
+import com.fishingmacro.pathfinding.ReturnHandler;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -16,6 +17,7 @@ public class SettingsScreen extends Screen {
     // Temp values for cancel support
     private boolean tmpUseHyperion;
     private boolean tmpFailsafeEnabled;
+    private boolean tmpUseBaritone;
 
     public SettingsScreen(Screen parent) {
         super(Text.literal("MSF Settings"));
@@ -26,6 +28,7 @@ public class SettingsScreen extends Screen {
     protected void init() {
         tmpUseHyperion = MacroConfig.useHyperion;
         tmpFailsafeEnabled = MacroConfig.failsafeEnabled;
+        tmpUseBaritone = MacroConfig.useBaritone;
 
         rebuildWidgets();
     }
@@ -76,46 +79,26 @@ public class SettingsScreen extends Screen {
         y += rowHeight; // header space
 
         addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "Reel Delay Min", 50, 1000, MacroConfig.reelDelayMinMs,
-                true, " ms", v -> MacroConfig.reelDelayMinMs = v.intValue()));
+                "Reel Delay", 50, 1000, MacroConfig.reelDelayMs,
+                true, " ms", v -> MacroConfig.reelDelayMs = v.intValue()));
         y += rowHeight;
 
         addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "Reel Delay Max", 50, 2000, MacroConfig.reelDelayMaxMs,
-                true, " ms", v -> MacroConfig.reelDelayMaxMs = v.intValue()));
+                "Cast Delay", 50, 1000, MacroConfig.castDelayMs,
+                true, " ms", v -> MacroConfig.castDelayMs = v.intValue()));
         y += rowHeight;
 
         addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "Cast Delay Min", 50, 1000, MacroConfig.castDelayMinMs,
-                true, " ms", v -> MacroConfig.castDelayMinMs = v.intValue()));
-        y += rowHeight;
-
-        addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "Cast Delay Max", 50, 2000, MacroConfig.castDelayMaxMs,
-                true, " ms", v -> MacroConfig.castDelayMaxMs = v.intValue()));
-        y += rowHeight;
-
-        addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "Post-Reel Delay Min", 50, 2000, MacroConfig.postReelDelayMinMs,
-                true, " ms", v -> MacroConfig.postReelDelayMinMs = v.intValue()));
-        y += rowHeight;
-
-        addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "Post-Reel Delay Max", 50, 3000, MacroConfig.postReelDelayMaxMs,
-                true, " ms", v -> MacroConfig.postReelDelayMaxMs = v.intValue()));
+                "Post-Reel Delay", 50, 2000, MacroConfig.postReelDelayMs,
+                true, " ms", v -> MacroConfig.postReelDelayMs = v.intValue()));
         y += rowHeight;
 
         // --- Anti-AFK ---
         y += rowHeight; // header space
 
         addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "Anti-AFK Interval Min", 5000, 60000, MacroConfig.antiAfkMinIntervalMs,
-                true, " ms", v -> MacroConfig.antiAfkMinIntervalMs = v.intValue()));
-        y += rowHeight;
-
-        addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "Anti-AFK Interval Max", 5000, 120000, MacroConfig.antiAfkMaxIntervalMs,
-                true, " ms", v -> MacroConfig.antiAfkMaxIntervalMs = v.intValue()));
+                "Anti-AFK Interval", 5000, 60000, MacroConfig.antiAfkIntervalMs,
+                true, " ms", v -> MacroConfig.antiAfkIntervalMs = v.intValue()));
         y += rowHeight;
 
         addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
@@ -137,17 +120,23 @@ public class SettingsScreen extends Screen {
         y += rowHeight;
 
         addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "KB Reaction Min", 50, 1000, MacroConfig.knockbackReactionMinMs,
-                true, " ms", v -> MacroConfig.knockbackReactionMinMs = v.intValue()));
-        y += rowHeight;
-
-        addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
-                "KB Reaction Max", 50, 2000, MacroConfig.knockbackReactionMaxMs,
-                true, " ms", v -> MacroConfig.knockbackReactionMaxMs = v.intValue()));
+                "KB Reaction", 50, 1000, MacroConfig.knockbackReactionMs,
+                true, " ms", v -> MacroConfig.knockbackReactionMs = v.intValue()));
         y += rowHeight;
 
         // --- Return ---
         y += rowHeight; // header space
+
+        boolean baritoneInstalled = ReturnHandler.isBaritoneAvailable();
+        String baritoneLabel = baritoneInstalled ? "Use Baritone" : "Use Baritone (not installed)";
+        CyclingButtonWidget<Boolean> baritoneButton = CyclingButtonWidget.onOffBuilder(tmpUseBaritone)
+                .build(left, y, sliderWidth, 20, Text.literal(baritoneLabel),
+                        (button, value) -> tmpUseBaritone = value);
+        if (!baritoneInstalled) {
+            baritoneButton.active = false;
+        }
+        addDrawableChild(baritoneButton);
+        y += rowHeight;
 
         addDrawableChild(new ConfigSliderWidget(left, y, sliderWidth, 20,
                 "Return Timeout", 5000, 60000, MacroConfig.returnTimeoutMs,
@@ -204,6 +193,7 @@ public class SettingsScreen extends Screen {
         addDrawableChild(ButtonWidget.builder(Text.literal("Save & Close"), button -> {
             MacroConfig.useHyperion = tmpUseHyperion;
             MacroConfig.failsafeEnabled = tmpFailsafeEnabled;
+            MacroConfig.useBaritone = tmpUseBaritone;
             MacroConfig.save();
             client.setScreen(parent);
         }).dimensions(centerX - buttonWidth - gap / 2, y, buttonWidth, 20).build());
@@ -234,17 +224,17 @@ public class SettingsScreen extends Screen {
 
         // Category headers
         drawCenteredHeader(context, "Combat", centerX, y);
-        y += rowHeight * 7; // 6 widgets + header
+        y += rowHeight * 7; // header + 6 widgets
         drawCenteredHeader(context, "Fishing Delays", centerX, y);
-        y += rowHeight * 7;
+        y += rowHeight * 4; // header + 3 widgets
         drawCenteredHeader(context, "Anti-AFK", centerX, y);
-        y += rowHeight * 5;
+        y += rowHeight * 4; // header + 3 widgets
         drawCenteredHeader(context, "Knockback", centerX, y);
-        y += rowHeight * 4;
+        y += rowHeight * 3; // header + 2 widgets
         drawCenteredHeader(context, "Return", centerX, y);
-        y += rowHeight * 4;
+        y += rowHeight * 5; // header + 4 widgets
         drawCenteredHeader(context, "Detection", centerX, y);
-        y += rowHeight * 3;
+        y += rowHeight * 3; // header + 2 widgets
         drawCenteredHeader(context, "Failsafe", centerX, y);
     }
 

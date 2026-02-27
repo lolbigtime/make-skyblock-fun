@@ -170,10 +170,8 @@ public class FishingMacro {
             Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
             if (creature.isPresent()) {
                 targetCreature = creature.get();
-                stateTimer.schedule(MathUtil.randomBetween(
-                        (long) MacroConfig.reelDelayMinMs,
-                        (long) MacroConfig.reelDelayMaxMs
-                ));
+                long[] range = MacroConfig.humanize(MacroConfig.reelDelayMs);
+                stateTimer.schedule(MathUtil.randomBetween(range[0], range[1]));
                 changeState(MacroState.SEA_CREATURE_DETECTED);
                 if (chatSeaCreatureDetector != null) chatSeaCreatureDetector.reset();
                 return;
@@ -185,10 +183,8 @@ public class FishingMacro {
             Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
             if (creature.isPresent()) {
                 targetCreature = creature.get();
-                stateTimer.schedule(MathUtil.randomBetween(
-                        (long) MacroConfig.reelDelayMinMs,
-                        (long) MacroConfig.reelDelayMaxMs
-                ));
+                long[] range = MacroConfig.humanize(MacroConfig.reelDelayMs);
+                stateTimer.schedule(MathUtil.randomBetween(range[0], range[1]));
                 changeState(MacroState.SEA_CREATURE_DETECTED);
                 return;
             }
@@ -197,11 +193,8 @@ public class FishingMacro {
         // Check knockback (after sea creature check so we kill first, then return)
         if (returnHandler.isKnockedOff()) {
             // Human reaction delay before responding to knockback
-            long reactionDelay = MathUtil.randomBetween(
-                    (long) MacroConfig.knockbackReactionMinMs,
-                    (long) MacroConfig.knockbackReactionMaxMs
-            );
-            stateTimer.schedule(reactionDelay);
+            long[] kbRange = MacroConfig.humanize(MacroConfig.knockbackReactionMs);
+            stateTimer.schedule(MathUtil.randomBetween(kbRange[0], kbRange[1]));
             changeState(MacroState.RETURNING_TO_SPOT);
             return;
         }
@@ -209,10 +202,8 @@ public class FishingMacro {
         // Check for fish bite
         if (biteDetector.hasBite()) {
             // Human reaction delay
-            stateTimer.schedule(MathUtil.randomBetween(
-                    (long) MacroConfig.reelDelayMinMs,
-                    (long) MacroConfig.reelDelayMaxMs
-            ));
+            long[] reelRange = MacroConfig.humanize(MacroConfig.reelDelayMs);
+            stateTimer.schedule(MathUtil.randomBetween(reelRange[0], reelRange[1]));
             rodSlotSelected = false;
             changeState(MacroState.REELING);
             return;
@@ -238,10 +229,8 @@ public class FishingMacro {
         rodSlotSelected = false;
 
         // Post-reel delay to let the catch register
-        stateTimer.schedule(MathUtil.randomBetween(
-                (long) MacroConfig.postReelDelayMinMs,
-                (long) MacroConfig.postReelDelayMaxMs
-        ));
+        long[] postReelRange = MacroConfig.humanize(MacroConfig.postReelDelayMs);
+        stateTimer.schedule(MathUtil.randomBetween(postReelRange[0], postReelRange[1]));
         changeState(MacroState.RE_CASTING);
     }
 
@@ -352,6 +341,8 @@ public class FishingMacro {
     }
 
     private void handleMeleeKill() {
+        if (targetCreature == null || targetCreature.isDead() || targetCreature.isRemoved()) return;
+
         // Walk toward creature and attack with humanized aim
         double dist = mc.player.squaredDistanceTo(targetCreature);
 
@@ -450,10 +441,8 @@ public class FishingMacro {
 
         // Wait for rotation to finish, then cast
         if (!RotationHandler.getInstance().isRotating()) {
-            stateTimer.schedule(MathUtil.randomBetween(
-                    (long) MacroConfig.castDelayMinMs,
-                    (long) MacroConfig.castDelayMaxMs
-            ));
+            long[] castRange = MacroConfig.humanize(MacroConfig.castDelayMs);
+            stateTimer.schedule(MathUtil.randomBetween(castRange[0], castRange[1]));
             changeState(MacroState.CASTING);
         }
     }

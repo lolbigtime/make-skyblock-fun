@@ -5,11 +5,33 @@ import com.fishingmacro.handler.KeySimulator;
 import com.fishingmacro.handler.RotationHandler;
 import com.fishingmacro.util.Clock;
 import com.fishingmacro.util.MathUtil;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.Vec3d;
 
 public class ReturnHandler {
     private static final MinecraftClient mc = MinecraftClient.getInstance();
+
+    private static final boolean baritoneAvailable;
+    static {
+        boolean found = false;
+        if (FabricLoader.getInstance().isModLoaded("baritone")) {
+            try {
+                Class.forName("baritone.api.BaritoneAPI");
+                found = true;
+                System.out.println("[FishingMacro] Baritone detected, A* pathfinding available");
+            } catch (ClassNotFoundException e) {
+                System.out.println("[FishingMacro] Baritone mod loaded but API not found, using manual walk-back");
+            }
+        } else {
+            System.out.println("[FishingMacro] Baritone not installed, using manual walk-back");
+        }
+        baritoneAvailable = found;
+    }
+
+    public static boolean isBaritoneAvailable() {
+        return baritoneAvailable;
+    }
 
     private enum ReturnPhase {
         AIMING, WALKING, STUCK_JUMP, STUCK_STRAFE, ARRIVED, TIMED_OUT
@@ -20,7 +42,7 @@ public class ReturnHandler {
     private float savedPitch;
     private boolean returning = false;
 
-    // Phase-based movement
+    // Phase-based movement (manual fallback)
     private ReturnPhase phase = ReturnPhase.AIMING;
     private Vec3d lastTickPos;
     private int stuckTicks;
@@ -33,6 +55,10 @@ public class ReturnHandler {
     private final Clock reaimCooldown = new Clock();
     private boolean timedOut;
     private int jumpRecoveryTicks;
+
+    // Baritone integration
+    private BaritoneReturnStrategy baritoneStrategy;
+    private boolean usingBaritone = false;
 
     public void savePosition() {
         if (mc.player == null) return;
@@ -52,6 +78,29 @@ public class ReturnHandler {
         if (savedPos == null) return;
         returning = true;
         timedOut = false;
+        returnStartTime = System.currentTimeMillis();
+
+        // Try Baritone if available and enabled
+        if (baritoneAvailable && MacroConfig.useBaritone) {
+            try {
+                if (baritoneStrategy == null) {
+                    baritoneStrategy = new BaritoneReturnStrategy();
+                }
+                baritoneStrategy.startPathfinding(savedPos.x, savedPos.y, savedPos.z);
+                usingBaritone = true;
+                return;
+            } catch (Exception e) {
+                System.err.println("[FishingMacro] Baritone failed, falling back to manual: " + e.getMessage());
+                usingBaritone = false;
+            }
+        }
+
+        // Manual walk-back fallback
+        startManualReturn();
+    }
+
+    private void startManualReturn() {
+        usingBaritone = false;
         phase = ReturnPhase.AIMING;
         stuckTicks = 0;
         stuckAttempts = 0;
@@ -59,7 +108,6 @@ public class ReturnHandler {
         sprinting = false;
         jumpRecoveryTicks = 0;
         lastTickPos = mc.player != null ? mc.player.getEntityPos() : null;
-        returnStartTime = System.currentTimeMillis();
 
         // Initial aim toward target
         if (mc.player != null) {
@@ -89,13 +137,48 @@ public class ReturnHandler {
 
         // Global timeout
         if (System.currentTimeMillis() - returnStartTime > MacroConfig.returnTimeoutMs) {
-            phase = ReturnPhase.TIMED_OUT;
+            if (usingBaritone && baritoneStrategy != null) {
+                baritoneStrategy.cancel();
+            }
+            releaseMovementKeys();
+            timedOut = true;
+            returning = false;
+            usingBaritone = false;
+            return;
         }
 
         if (hasArrived()) {
-            phase = ReturnPhase.ARRIVED;
+            if (usingBaritone && baritoneStrategy != null) {
+                baritoneStrategy.cancel();
+            }
+            releaseMovementKeys();
+            returning = false;
+            usingBaritone = false;
+            return;
         }
 
+        if (usingBaritone) {
+            tickBaritone();
+        } else {
+            tickManual();
+        }
+    }
+
+    private void tickBaritone() {
+        // Baritone handles all movement; just check if it finished or failed
+        if (baritoneStrategy != null && baritoneStrategy.hasFinished()) {
+            if (hasArrived()) {
+                returning = false;
+                usingBaritone = false;
+            } else {
+                // Baritone finished but we haven't arrived - fall back to manual
+                System.out.println("[FishingMacro] Baritone path ended without arriving, falling back to manual");
+                startManualReturn();
+            }
+        }
+    }
+
+    private void tickManual() {
         switch (phase) {
             case AIMING -> tickAiming();
             case WALKING -> tickWalking();
@@ -249,7 +332,11 @@ public class ReturnHandler {
     }
 
     public void stopReturn() {
+        if (usingBaritone && baritoneStrategy != null) {
+            baritoneStrategy.cancel();
+        }
         returning = false;
+        usingBaritone = false;
         releaseMovementKeys();
     }
 

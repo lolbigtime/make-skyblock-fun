@@ -35,7 +35,19 @@ public class ChatSeaCreatureDetector {
         "Abyssal Miner",
         "Thunder",
         "Lord Jawbus",
-        "Plhlegblast"
+        "Plhlegblast",
+        // Bayou
+        "Alligator",
+        "Banshee",
+        "Titanoboa",
+        "Bayou Sludge",
+        "Dumpster Diver",
+        "Trash Gobbler",
+        // Water Hotspot
+        "Frog Man",
+        "Snapping Turtle",
+        "Blue Ringed Octopus",
+        "Wiki Tiki"
     };
 
     private static final long ALERT_EXPIRY_MS = 5000;

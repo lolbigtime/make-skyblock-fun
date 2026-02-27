@@ -21,26 +21,22 @@ public class MacroConfig {
     public static int meleeCpsMin = 8;
     public static int meleeCpsMax = 12;
 
-    // Fishing delays
-    public static int reelDelayMinMs = 150;
-    public static int reelDelayMaxMs = 400;
-    public static int castDelayMinMs = 150;
-    public static int castDelayMaxMs = 350;
-    public static int postReelDelayMinMs = 300;
-    public static int postReelDelayMaxMs = 600;
+    // Fishing delays (single base values, ±30% applied via humanize())
+    public static int reelDelayMs = 275;
+    public static int castDelayMs = 250;
+    public static int postReelDelayMs = 450;
 
     // Anti-AFK
-    public static int antiAfkMinIntervalMs = 15000;
-    public static int antiAfkMaxIntervalMs = 30000;
+    public static int antiAfkIntervalMs = 22500;
     public static float antiAfkMaxYawDrift = 3.0f;
     public static float antiAfkMaxPitchDrift = 1.5f;
 
     // Knockback recovery
     public static double knockbackThreshold = 3.0;
-    public static int knockbackReactionMinMs = 200;
-    public static int knockbackReactionMaxMs = 600;
+    public static int knockbackReactionMs = 400;
 
     // Return pathfinding
+    public static boolean useBaritone = true;
     public static int returnTimeoutMs = 15000;
     public static int returnStuckThresholdTicks = 15;
     public static int returnMaxStuckAttempts = 6;
@@ -56,26 +52,45 @@ public class MacroConfig {
     public static double failsafeTeleportThreshold = 4.0;
     public static float failsafeRotationThreshold = 15.0f;
 
+    /**
+     * Computes a ±30% humanized range from a base delay value.
+     * Returns {min, max} as longs for use with MathUtil.randomBetween().
+     */
+    public static long[] humanize(int baseMs) {
+        return new long[]{(long) (baseMs * 0.7), (long) (baseMs * 1.3)};
+    }
+
     private static class ConfigData {
         boolean useHyperion = MacroConfig.useHyperion;
         int killTimeoutMs = MacroConfig.killTimeoutMs;
         int hyperionRetryDelayMs = MacroConfig.hyperionRetryDelayMs;
         int hyperionMaxAttempts = MacroConfig.hyperionMaxAttempts;
-        int reelDelayMinMs = MacroConfig.reelDelayMinMs;
-        int reelDelayMaxMs = MacroConfig.reelDelayMaxMs;
-        int castDelayMinMs = MacroConfig.castDelayMinMs;
-        int castDelayMaxMs = MacroConfig.castDelayMaxMs;
-        int postReelDelayMinMs = MacroConfig.postReelDelayMinMs;
-        int postReelDelayMaxMs = MacroConfig.postReelDelayMaxMs;
         int meleeCpsMin = MacroConfig.meleeCpsMin;
         int meleeCpsMax = MacroConfig.meleeCpsMax;
-        int antiAfkMinIntervalMs = MacroConfig.antiAfkMinIntervalMs;
-        int antiAfkMaxIntervalMs = MacroConfig.antiAfkMaxIntervalMs;
+
+        // New single-value delay fields
+        int reelDelayMs = MacroConfig.reelDelayMs;
+        int castDelayMs = MacroConfig.castDelayMs;
+        int postReelDelayMs = MacroConfig.postReelDelayMs;
+        int knockbackReactionMs = MacroConfig.knockbackReactionMs;
+        int antiAfkIntervalMs = MacroConfig.antiAfkIntervalMs;
+
+        // Old min/max fields for backward compat (read-only, -1 = not present)
+        int reelDelayMinMs = -1;
+        int reelDelayMaxMs = -1;
+        int castDelayMinMs = -1;
+        int castDelayMaxMs = -1;
+        int postReelDelayMinMs = -1;
+        int postReelDelayMaxMs = -1;
+        int knockbackReactionMinMs = -1;
+        int knockbackReactionMaxMs = -1;
+        int antiAfkMinIntervalMs = -1;
+        int antiAfkMaxIntervalMs = -1;
+
         float antiAfkMaxYawDrift = MacroConfig.antiAfkMaxYawDrift;
         float antiAfkMaxPitchDrift = MacroConfig.antiAfkMaxPitchDrift;
         double knockbackThreshold = MacroConfig.knockbackThreshold;
-        int knockbackReactionMinMs = MacroConfig.knockbackReactionMinMs;
-        int knockbackReactionMaxMs = MacroConfig.knockbackReactionMaxMs;
+        boolean useBaritone = MacroConfig.useBaritone;
         int returnTimeoutMs = MacroConfig.returnTimeoutMs;
         int returnStuckThresholdTicks = MacroConfig.returnStuckThresholdTicks;
         int returnMaxStuckAttempts = MacroConfig.returnMaxStuckAttempts;
@@ -99,21 +114,40 @@ public class MacroConfig {
             killTimeoutMs = data.killTimeoutMs;
             hyperionRetryDelayMs = data.hyperionRetryDelayMs;
             hyperionMaxAttempts = data.hyperionMaxAttempts;
-            reelDelayMinMs = data.reelDelayMinMs;
-            reelDelayMaxMs = data.reelDelayMaxMs;
-            castDelayMinMs = data.castDelayMinMs;
-            castDelayMaxMs = data.castDelayMaxMs;
-            postReelDelayMinMs = data.postReelDelayMinMs;
-            postReelDelayMaxMs = data.postReelDelayMaxMs;
             meleeCpsMin = data.meleeCpsMin;
             meleeCpsMax = data.meleeCpsMax;
-            antiAfkMinIntervalMs = data.antiAfkMinIntervalMs;
-            antiAfkMaxIntervalMs = data.antiAfkMaxIntervalMs;
+
+            // Backward compat: migrate old min/max pairs to single values
+            if (data.reelDelayMinMs >= 0 && data.reelDelayMaxMs >= 0) {
+                reelDelayMs = (data.reelDelayMinMs + data.reelDelayMaxMs) / 2;
+            } else {
+                reelDelayMs = data.reelDelayMs;
+            }
+            if (data.castDelayMinMs >= 0 && data.castDelayMaxMs >= 0) {
+                castDelayMs = (data.castDelayMinMs + data.castDelayMaxMs) / 2;
+            } else {
+                castDelayMs = data.castDelayMs;
+            }
+            if (data.postReelDelayMinMs >= 0 && data.postReelDelayMaxMs >= 0) {
+                postReelDelayMs = (data.postReelDelayMinMs + data.postReelDelayMaxMs) / 2;
+            } else {
+                postReelDelayMs = data.postReelDelayMs;
+            }
+            if (data.knockbackReactionMinMs >= 0 && data.knockbackReactionMaxMs >= 0) {
+                knockbackReactionMs = (data.knockbackReactionMinMs + data.knockbackReactionMaxMs) / 2;
+            } else {
+                knockbackReactionMs = data.knockbackReactionMs;
+            }
+            if (data.antiAfkMinIntervalMs >= 0 && data.antiAfkMaxIntervalMs >= 0) {
+                antiAfkIntervalMs = (data.antiAfkMinIntervalMs + data.antiAfkMaxIntervalMs) / 2;
+            } else {
+                antiAfkIntervalMs = data.antiAfkIntervalMs;
+            }
+
             antiAfkMaxYawDrift = data.antiAfkMaxYawDrift;
             antiAfkMaxPitchDrift = data.antiAfkMaxPitchDrift;
             knockbackThreshold = data.knockbackThreshold;
-            knockbackReactionMinMs = data.knockbackReactionMinMs;
-            knockbackReactionMaxMs = data.knockbackReactionMaxMs;
+            useBaritone = data.useBaritone;
             returnTimeoutMs = data.returnTimeoutMs;
             returnStuckThresholdTicks = data.returnStuckThresholdTicks;
             returnMaxStuckAttempts = data.returnMaxStuckAttempts;
@@ -133,21 +167,17 @@ public class MacroConfig {
         data.killTimeoutMs = killTimeoutMs;
         data.hyperionRetryDelayMs = hyperionRetryDelayMs;
         data.hyperionMaxAttempts = hyperionMaxAttempts;
-        data.reelDelayMinMs = reelDelayMinMs;
-        data.reelDelayMaxMs = reelDelayMaxMs;
-        data.castDelayMinMs = castDelayMinMs;
-        data.castDelayMaxMs = castDelayMaxMs;
-        data.postReelDelayMinMs = postReelDelayMinMs;
-        data.postReelDelayMaxMs = postReelDelayMaxMs;
         data.meleeCpsMin = meleeCpsMin;
         data.meleeCpsMax = meleeCpsMax;
-        data.antiAfkMinIntervalMs = antiAfkMinIntervalMs;
-        data.antiAfkMaxIntervalMs = antiAfkMaxIntervalMs;
+        data.reelDelayMs = reelDelayMs;
+        data.castDelayMs = castDelayMs;
+        data.postReelDelayMs = postReelDelayMs;
+        data.knockbackReactionMs = knockbackReactionMs;
+        data.antiAfkIntervalMs = antiAfkIntervalMs;
         data.antiAfkMaxYawDrift = antiAfkMaxYawDrift;
         data.antiAfkMaxPitchDrift = antiAfkMaxPitchDrift;
         data.knockbackThreshold = knockbackThreshold;
-        data.knockbackReactionMinMs = knockbackReactionMinMs;
-        data.knockbackReactionMaxMs = knockbackReactionMaxMs;
+        data.useBaritone = useBaritone;
         data.returnTimeoutMs = returnTimeoutMs;
         data.returnStuckThresholdTicks = returnStuckThresholdTicks;
         data.returnMaxStuckAttempts = returnMaxStuckAttempts;
