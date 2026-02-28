@@ -297,10 +297,11 @@ public class FishingMacro {
     }
 
     private void handleHyperionKill() {
-        // Look down at floor for Wither Impact AoE
-        if (!lookedDown) {
-            RotationHandler.getInstance().lookDownAtFloor();
-            lookedDown = true;
+        // Aim at the target entity for Wither Impact
+        if (!RotationHandler.getInstance().isRotating()
+                && (!meleeAimCooldown.isScheduled() || meleeAimCooldown.passed())) {
+            RotationHandler.getInstance().easeToEntity(targetCreature);
+            meleeAimCooldown.schedule(MathUtil.randomBetween(200, 400));
         }
 
         if (RotationHandler.getInstance().isRotating()) return;
@@ -316,7 +317,6 @@ public class FishingMacro {
         if (hyperionAttempts >= MacroConfig.hyperionMaxAttempts) {
             // Hyperion failed - fall back to melee for the remaining kill timeout
             hyperionFallback = true;
-            lookedDown = false;
             attackTimer.reset();
         }
     }
@@ -332,6 +332,13 @@ public class FishingMacro {
                 && (!meleeAimCooldown.isScheduled() || meleeAimCooldown.passed())) {
             RotationHandler.getInstance().easeToEntity(targetCreature);
             meleeAimCooldown.schedule(MathUtil.randomBetween(200, 400));
+        }
+
+        // Jump if target is above us (flying mobs like Banshees)
+        if (targetCreature.getY() > mc.player.getY() + 1.5) {
+            KeySimulator.pressKey(mc.options.jumpKey);
+        } else {
+            KeySimulator.releaseKey(mc.options.jumpKey);
         }
 
         // Walk toward if too far
@@ -368,6 +375,7 @@ public class FishingMacro {
         // Release combat keys
         KeySimulator.releaseKey(mc.options.forwardKey);
         KeySimulator.releaseKey(mc.options.sprintKey);
+        KeySimulator.releaseKey(mc.options.jumpKey);
         KeySimulator.releaseKey(mc.options.attackKey);
 
         KeySimulator.pressHotbar(detectedRodSlot);
