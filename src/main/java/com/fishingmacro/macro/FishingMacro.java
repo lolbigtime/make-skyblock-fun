@@ -166,6 +166,9 @@ public class FishingMacro {
         Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
         if (creature.isPresent()) {
             targetCreature = creature.get();
+            System.out.println("[FishingMacro] Creature detected: " + targetCreature.getType()
+                    + " (id=" + targetCreature.getId() + ", dist="
+                    + String.format("%.1f", mc.player.distanceTo(targetCreature)) + ")");
             long[] range = MacroConfig.humanize(MacroConfig.reelDelayMs);
             stateTimer.schedule(MathUtil.randomBetween(range[0], range[1]));
             changeState(MacroState.SEA_CREATURE_DETECTED);
@@ -266,8 +269,8 @@ public class FishingMacro {
     }
 
     private void handleKilling() {
-        if (targetCreature == null || targetCreature.isDead() || targetCreature.isRemoved()) {
-            // Target is dead, swap back to rod
+        if (targetCreature == null || targetCreature.isRemoved()) {
+            // Target despawned, swap back to rod
             stateTimer.schedule(MathUtil.randomBetween(100, 300));
             changeState(MacroState.SWAPPING_TO_ROD);
             return;
@@ -276,6 +279,8 @@ public class FishingMacro {
         // Timeout - blacklist the entity so we don't re-target it
         if (killTimeout.passed()) {
             if (targetCreature != null) {
+                System.out.println("[FishingMacro] Kill timeout for " + targetCreature.getType()
+                        + " (id=" + targetCreature.getId() + "), blacklisting for 30s");
                 seaCreatureDetector.blacklistEntity(targetCreature.getId());
             }
             stateTimer.schedule(MathUtil.randomBetween(100, 200));
@@ -308,7 +313,7 @@ public class FishingMacro {
     }
 
     private void handleMeleeKill() {
-        if (targetCreature == null || targetCreature.isDead() || targetCreature.isRemoved()) return;
+        if (targetCreature == null || targetCreature.isRemoved()) return;
 
         // Walk toward creature and attack with humanized aim
         double dist = mc.player.squaredDistanceTo(targetCreature);
@@ -426,11 +431,14 @@ public class FishingMacro {
             ItemStack stack = mc.player.getInventory().getStack(i);
             if (stack.isEmpty()) continue;
 
+            String itemName = stack.getName().getString();
+            System.out.println("[FishingMacro] Slot " + i + ": " + itemName);
+
             if (stack.getItem() instanceof FishingRodItem) {
                 detectedRodSlot = i;
             }
 
-            if (stack.getName().getString().toLowerCase().contains("hyperion")) {
+            if (itemName.toLowerCase().contains("hyperion")) {
                 detectedWeaponSlot = i;
             }
         }
@@ -441,6 +449,7 @@ public class FishingMacro {
 
     private void changeState(MacroState newState) {
         if (state != newState) {
+            System.out.println("[FishingMacro] " + state + " -> " + newState);
             state = newState;
         }
     }

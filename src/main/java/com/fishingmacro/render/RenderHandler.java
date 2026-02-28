@@ -6,18 +6,10 @@ import com.fishingmacro.macro.FishingMacro;
 import com.fishingmacro.macro.MacroState;
 import com.fishingmacro.pathfinding.ReturnHandler;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Vec3d;
 
 public class RenderHandler {
     private static RenderHandler instance;
@@ -31,7 +23,6 @@ public class RenderHandler {
 
     public void register() {
         HudRenderCallback.EVENT.register(this::onHudRender);
-        WorldRenderEvents.BEFORE_DEBUG_RENDER.register(this::onWorldRender);
     }
 
     // --- HUD Overlay (top-left corner) ---
@@ -133,73 +124,4 @@ public class RenderHandler {
         };
     }
 
-    // --- World Rendering (line to saved position) ---
-
-    private void onWorldRender(WorldRenderContext context) {
-        FishingMacro macro = FishingMacro.getInstance();
-        if (!macro.isRunning()) return;
-
-        MacroState state = macro.getState();
-        if (state != MacroState.RETURNING_TO_SPOT) return;
-
-        ReturnHandler returnHandler = macro.getReturnHandler();
-        Vec3d savedPos = returnHandler.getSavedPos();
-        if (savedPos == null) return;
-
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null) return;
-
-        Camera camera = mc.gameRenderer.getCamera();
-        Vec3d cameraPos = camera.getCameraPos();
-        MatrixStack matrices = context.matrices();
-
-        matrices.push();
-        matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-
-        try {
-            MatrixStack.Entry entry = matrices.peek();
-
-            VertexConsumerProvider consumers = context.consumers();
-            VertexConsumer lines = consumers.getBuffer(RenderLayers.lines());
-
-            // Draw line from player to saved position
-            Vec3d playerPos = mc.player.getEntityPos();
-            drawLine(lines, entry, playerPos, savedPos, 0, 220, 180, 220);
-
-            // Draw destination marker (X) at saved position
-            float size = 0.4f;
-            Vec3d a1 = new Vec3d(savedPos.x - size, savedPos.y + 0.1, savedPos.z - size);
-            Vec3d a2 = new Vec3d(savedPos.x + size, savedPos.y + 0.1, savedPos.z + size);
-            Vec3d b1 = new Vec3d(savedPos.x - size, savedPos.y + 0.1, savedPos.z + size);
-            Vec3d b2 = new Vec3d(savedPos.x + size, savedPos.y + 0.1, savedPos.z - size);
-            drawLine(lines, entry, a1, a2, 255, 50, 50, 220);
-            drawLine(lines, entry, b1, b2, 255, 50, 50, 220);
-        } catch (Exception e) {
-            // Gracefully handle any rendering API differences
-        }
-
-        matrices.pop();
-    }
-
-    private void drawLine(VertexConsumer consumer, MatrixStack.Entry entry,
-                          Vec3d from, Vec3d to, int r, int g, int b, int a) {
-        float dx = (float) (to.x - from.x);
-        float dy = (float) (to.y - from.y);
-        float dz = (float) (to.z - from.z);
-        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len > 0) {
-            dx /= len;
-            dy /= len;
-            dz /= len;
-        } else {
-            dy = 1.0f;
-        }
-
-        consumer.vertex(entry, (float) from.x, (float) from.y, (float) from.z)
-                .color(r, g, b, a)
-                .normal(entry, dx, dy, dz);
-        consumer.vertex(entry, (float) to.x, (float) to.y, (float) to.z)
-                .color(r, g, b, a)
-                .normal(entry, dx, dy, dz);
-    }
 }

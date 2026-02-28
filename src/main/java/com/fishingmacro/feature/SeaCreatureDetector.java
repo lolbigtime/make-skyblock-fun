@@ -57,8 +57,8 @@ public class SeaCreatureDetector {
         // Exclude squids
         if (entity.getType() == EntityType.SQUID || entity.getType() == EntityType.GLOW_SQUID) return false;
 
-        // Must be alive
-        if (entity.isDead()) return false;
+        // Must exist in world (don't use isDead() - Hypixel mobs may have 0 client-side health)
+        if (entity.isRemoved()) return false;
 
         // Skip blacklisted entities (failed kill attempts) and clean up expired entries
         long now = System.currentTimeMillis();
