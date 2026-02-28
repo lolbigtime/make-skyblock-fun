@@ -37,12 +37,10 @@ public class FishingMacro {
 
     private final Clock stateTimer = new Clock();
     private LivingEntity targetCreature = null;
-    private int hyperionAttempts = 0;
     private final Clock attackTimer = new Clock();
     private final Clock killTimeout = new Clock();
     private boolean rodSlotSelected = false;
     private boolean lookedDown = false;
-    private boolean hyperionFallback = false;
     private boolean rotationRestored = false;
     private final Clock meleeAimCooldown = new Clock();
     private World savedWorld = null;
@@ -227,9 +225,7 @@ public class FishingMacro {
             targetCreature = creature.get();
             // Rod is already reeled in from REELING state, go straight to weapon swap
             KeySimulator.pressHotbar(detectedWeaponSlot);
-            hyperionAttempts = 0;
             lookedDown = false;
-            hyperionFallback = false;
             killTimeout.schedule(MacroConfig.killTimeoutMs);
             stateTimer.schedule(MathUtil.randomBetween(50, 120));
             changeState(MacroState.KILLING);
@@ -263,9 +259,7 @@ public class FishingMacro {
         if (!stateTimer.passed()) return;
 
         KeySimulator.pressHotbar(detectedWeaponSlot);
-        hyperionAttempts = 0;
         lookedDown = false;
-        hyperionFallback = false;
         killTimeout.schedule(MacroConfig.killTimeoutMs);
         stateTimer.schedule(MathUtil.randomBetween(50, 120));
         changeState(MacroState.KILLING);
@@ -289,7 +283,7 @@ public class FishingMacro {
             return;
         }
 
-        if (MacroConfig.useHyperion && !hyperionFallback) {
+        if (MacroConfig.useHyperion) {
             handleHyperionKill();
         } else {
             handleMeleeKill();
@@ -297,27 +291,19 @@ public class FishingMacro {
     }
 
     private void handleHyperionKill() {
-        // Aim at the target entity for Wither Impact
-        if (!RotationHandler.getInstance().isRotating()
-                && (!meleeAimCooldown.isScheduled() || meleeAimCooldown.passed())) {
-            RotationHandler.getInstance().easeToEntity(targetCreature);
-            meleeAimCooldown.schedule(MathUtil.randomBetween(200, 400));
+        // Look down at floor for Wither Impact AoE
+        if (!lookedDown) {
+            RotationHandler.getInstance().lookDownAtFloor();
+            lookedDown = true;
         }
 
         if (RotationHandler.getInstance().isRotating()) return;
 
-        // Right-click to use Hyperion ability
+        // Right-click to use Hyperion ability until kill timeout expires
         if (!attackTimer.isScheduled() || attackTimer.passed()) {
             KeySimulator.rightClick();
-            hyperionAttempts++;
             attackTimer.schedule(MacroConfig.hyperionRetryDelayMs +
                     (long) MathUtil.randomFloat(-50, 100));
-        }
-
-        if (hyperionAttempts >= MacroConfig.hyperionMaxAttempts) {
-            // Hyperion failed - fall back to melee for the remaining kill timeout
-            hyperionFallback = true;
-            attackTimer.reset();
         }
     }
 
@@ -332,13 +318,6 @@ public class FishingMacro {
                 && (!meleeAimCooldown.isScheduled() || meleeAimCooldown.passed())) {
             RotationHandler.getInstance().easeToEntity(targetCreature);
             meleeAimCooldown.schedule(MathUtil.randomBetween(200, 400));
-        }
-
-        // Jump if target is above us (flying mobs like Banshees)
-        if (targetCreature.getY() > mc.player.getY() + 1.5) {
-            KeySimulator.pressKey(mc.options.jumpKey);
-        } else {
-            KeySimulator.releaseKey(mc.options.jumpKey);
         }
 
         // Walk toward if too far
