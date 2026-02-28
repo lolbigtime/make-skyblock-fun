@@ -42,6 +42,7 @@ public class FishingMacro {
     private final Clock killTimeout = new Clock();
     private boolean rodSlotSelected = false;
     private boolean lookedDown = false;
+    private boolean hyperionFallback = false;
     private boolean rotationRestored = false;
     private final Clock meleeAimCooldown = new Clock();
     private World savedWorld = null;
@@ -247,6 +248,7 @@ public class FishingMacro {
                 KeySimulator.pressHotbar(detectedWeaponSlot);
                 hyperionAttempts = 0;
                 lookedDown = false;
+                hyperionFallback = false;
                 killTimeout.schedule(MacroConfig.killTimeoutMs);
                 stateTimer.schedule(MathUtil.randomBetween(50, 120));
                 changeState(MacroState.KILLING);
@@ -283,6 +285,7 @@ public class FishingMacro {
         KeySimulator.pressHotbar(detectedWeaponSlot);
         hyperionAttempts = 0;
         lookedDown = false;
+        hyperionFallback = false;
         killTimeout.schedule(MacroConfig.killTimeoutMs);
         stateTimer.schedule(MathUtil.randomBetween(50, 120));
         changeState(MacroState.KILLING);
@@ -306,7 +309,7 @@ public class FishingMacro {
             return;
         }
 
-        if (MacroConfig.useHyperion) {
+        if (MacroConfig.useHyperion && !hyperionFallback) {
             handleHyperionKill();
         } else {
             handleMeleeKill();
@@ -331,12 +334,10 @@ public class FishingMacro {
         }
 
         if (hyperionAttempts >= MacroConfig.hyperionMaxAttempts) {
-            // Max attempts reached - blacklist the entity so we don't re-target it
-            if (targetCreature != null) {
-                seaCreatureDetector.blacklistEntity(targetCreature.getId());
-            }
-            stateTimer.schedule(MathUtil.randomBetween(100, 300));
-            changeState(MacroState.SWAPPING_TO_ROD);
+            // Hyperion failed - fall back to melee for the remaining kill timeout
+            hyperionFallback = true;
+            lookedDown = false;
+            attackTimer.reset();
         }
     }
 
