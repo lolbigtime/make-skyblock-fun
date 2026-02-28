@@ -164,31 +164,14 @@ public class FishingMacro {
         // Don't scan during initial delay after casting
         if (stateTimer.isScheduled() && !stateTimer.passed()) return;
 
-        // Check for sea creatures - chat-based detection first, then entity scan to find target
-        boolean chatAlert = chatSeaCreatureDetector != null && chatSeaCreatureDetector.hasSeaCreatureAlert();
-        if (chatAlert) {
-            // Chat detected a catch - use entity scanner to find the target
-            Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
-            if (creature.isPresent()) {
-                targetCreature = creature.get();
-                long[] range = MacroConfig.humanize(MacroConfig.reelDelayMs);
-                stateTimer.schedule(MathUtil.randomBetween(range[0], range[1]));
-                changeState(MacroState.SEA_CREATURE_DETECTED);
-                if (chatSeaCreatureDetector != null) chatSeaCreatureDetector.reset();
-                return;
-            }
-        }
-
-        // Fallback: entity-only detection (no chat message)
-        if (!chatAlert) {
-            Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
-            if (creature.isPresent()) {
-                targetCreature = creature.get();
-                long[] range = MacroConfig.humanize(MacroConfig.reelDelayMs);
-                stateTimer.schedule(MathUtil.randomBetween(range[0], range[1]));
-                changeState(MacroState.SEA_CREATURE_DETECTED);
-                return;
-            }
+        // Check for sea creatures nearby
+        Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
+        if (creature.isPresent()) {
+            targetCreature = creature.get();
+            long[] range = MacroConfig.humanize(MacroConfig.reelDelayMs);
+            stateTimer.schedule(MathUtil.randomBetween(range[0], range[1]));
+            changeState(MacroState.SEA_CREATURE_DETECTED);
+            return;
         }
 
         // Check knockback (after sea creature check so we kill first, then return)
@@ -238,22 +221,19 @@ public class FishingMacro {
     private void handleReCasting() {
         if (!stateTimer.passed()) return;
 
-        // Check if a sea creature spawned while we were reeling — skip recast and go straight to killing
-        if (chatSeaCreatureDetector != null && chatSeaCreatureDetector.hasSeaCreatureAlert()) {
-            Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
-            if (creature.isPresent()) {
-                targetCreature = creature.get();
-                chatSeaCreatureDetector.reset();
-                // Rod is already reeled in from REELING state, go straight to weapon swap
-                KeySimulator.pressHotbar(detectedWeaponSlot);
-                hyperionAttempts = 0;
-                lookedDown = false;
-                hyperionFallback = false;
-                killTimeout.schedule(MacroConfig.killTimeoutMs);
-                stateTimer.schedule(MathUtil.randomBetween(50, 120));
-                changeState(MacroState.KILLING);
-                return;
-            }
+        // Check if a sea creature is nearby — skip recast and go straight to killing
+        Optional<LivingEntity> creature = seaCreatureDetector.detectSeaCreature();
+        if (creature.isPresent()) {
+            targetCreature = creature.get();
+            // Rod is already reeled in from REELING state, go straight to weapon swap
+            KeySimulator.pressHotbar(detectedWeaponSlot);
+            hyperionAttempts = 0;
+            lookedDown = false;
+            hyperionFallback = false;
+            killTimeout.schedule(MacroConfig.killTimeoutMs);
+            stateTimer.schedule(MathUtil.randomBetween(50, 120));
+            changeState(MacroState.KILLING);
+            return;
         }
 
         // Ensure rod is selected before casting
