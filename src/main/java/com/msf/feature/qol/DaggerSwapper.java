@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 public class DaggerSwapper implements Feature {
     private static final MinecraftClient mc = MinecraftClient.getInstance();
     private static final Pattern ATTUNEMENT_PATTERN = Pattern.compile(
-            "Strike using (\\w+) attunement on your dagger"
+            "Strike using the (\\w+) attunement on your dagger"
     );
 
     private enum State {
