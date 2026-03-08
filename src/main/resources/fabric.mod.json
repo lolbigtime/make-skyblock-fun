@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "id": "fishingmacro",
+  "id": "msf",
   "version": "${version}",
-  "name": "Fishing Macro",
-  "description": "Automated fishing macro for Hypixel SkyBlock",
+  "name": "MSF",
+  "description": "Multi-feature utility mod for Hypixel SkyBlock",
   "authors": [],
   "contact": {},
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "com.fishingmacro.FishingMacroClient"
+      "com.msf.MSFClient"
     ]
   },
   "mixins": [
-    "fishing-macro.mixins.json"
+    "msf.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.16.0",

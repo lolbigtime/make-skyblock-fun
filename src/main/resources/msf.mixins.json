@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.msf.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "KeyBindingAccessor",
+    "MinecraftClientAccessor",
+    "MouseMixin",
+    "WindowFocusMixin",
+    "GameRendererMixin",
+    "ImGuiMouseMixin",
+    "ImGuiKeyboardMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
