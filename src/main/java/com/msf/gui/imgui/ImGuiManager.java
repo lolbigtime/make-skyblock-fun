@@ -123,6 +123,9 @@ public class ImGuiManager {
             // Ensure we render to the default framebuffer (screen)
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 
+            // Set viewport to full framebuffer
+            GL11.glViewport(0, 0, fbW[0], fbH[0]);
+
             ImGui.newFrame();
 
             // Build UI
@@ -130,6 +133,15 @@ public class ImGuiManager {
 
             // Render
             ImGui.render();
+
+            // Set up GL state for imgui rendering
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GL11.glDisable(GL11.GL_CULL_FACE);
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            GL13.glActiveTexture(GL13.GL_TEXTURE0);
+
             implGl3.renderDrawData(ImGui.getDrawData());
 
             // Restore GL state
