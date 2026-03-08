@@ -16,6 +16,8 @@ import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
+import net.minecraft.util.math.Vec3d;
+
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -139,6 +141,8 @@ public class DaggerSwapper implements Feature {
         }
     }
 
+    private static final double BOSS_NAMETAG_CLUSTER_RADIUS_SQ = 4.0 * 4.0;
+
     private void scanNametags() {
         if (mc.player == null || mc.world == null) return;
         if (scanCooldown.isScheduled() && !scanCooldown.passed()) return;
@@ -146,17 +150,36 @@ public class DaggerSwapper implements Feature {
         tickCounter++;
         if (tickCounter % SCAN_INTERVAL_TICKS != 0) return;
 
+        String playerName = mc.player.getName().getString();
+
         List<ArmorStandEntity> stands = EntityScanner.getEntitiesWithinRadius(
                 mc.player.getEntityPos(), NAMETAG_SCAN_RADIUS, ArmorStandEntity.class
         );
 
+        // Find our boss by looking for "Spawned by: <player>" nametag
+        Vec3d ourBossPos = null;
+        for (ArmorStandEntity stand : stands) {
+            Text customName = stand.getCustomName();
+            if (customName == null) continue;
+            String name = Formatting.strip(customName.getString());
+            if (name == null) continue;
+            if (name.contains("Spawned by") && name.contains(playerName)) {
+                ourBossPos = stand.getEntityPos();
+                break;
+            }
+        }
+
+        if (ourBossPos == null) return;
+
+        // Only check nametags near our boss
         boolean sawImmune = false;
         Attunement detectedAttunement = null;
 
         for (ArmorStandEntity stand : stands) {
+            if (stand.squaredDistanceTo(ourBossPos) > BOSS_NAMETAG_CLUSTER_RADIUS_SQ) continue;
+
             Text customName = stand.getCustomName();
             if (customName == null) continue;
-
             String name = Formatting.strip(customName.getString());
             if (name == null) continue;
             String upper = name.toUpperCase();
