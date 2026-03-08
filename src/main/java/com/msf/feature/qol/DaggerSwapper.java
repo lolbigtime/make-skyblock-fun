@@ -3,15 +3,18 @@ package com.msf.feature.qol;
 import com.msf.config.MacroConfig;
 import com.msf.feature.system.Feature;
 import com.msf.feature.system.FeatureCategory;
+import com.msf.gui.ConfigSliderWidget;
 import com.msf.handler.KeySimulator;
 import com.msf.util.Clock;
 import com.msf.util.MathUtil;
-import imgui.ImGui;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -181,30 +184,10 @@ public class DaggerSwapper implements Feature {
     }
 
     @Override
-    public void renderSettings() {
-        int[] swapDelay = {MacroConfig.daggerSwapDelayMs};
-        if (ImGui.sliderInt("Swap Delay (ms)##dagger", swapDelay, 50, 500)) {
-            MacroConfig.daggerSwapDelayMs = swapDelay[0];
-        }
-
-        int[] toggleDelay = {MacroConfig.daggerToggleDelayMs};
-        if (ImGui.sliderInt("Toggle Delay (ms)##dagger", toggleDelay, 50, 500)) {
-            MacroConfig.daggerToggleDelayMs = toggleDelay[0];
-        }
-
-        ImGui.spacing();
-        ImGui.text("Attunement Mapping:");
-        ImGui.bulletText("ASHEN -> Pyrochaos Dagger (Stone Sword)");
-        ImGui.bulletText("AURIC -> Pyrochaos Dagger (Golden Sword)");
-        ImGui.bulletText("CRYSTAL -> Deathripper Dagger (Diamond Sword)");
-        ImGui.bulletText("SPIRIT -> Deathripper Dagger (Iron Sword)");
-
-        if (state != State.IDLE) {
-            ImGui.spacing();
-            ImGui.textColored(0.0f, 1.0f, 0.5f, 1.0f, "Active: " + state.name());
-            if (targetAttunement != null) {
-                ImGui.text("Target: " + targetAttunement.name() + " -> " + targetAttunement.daggerName);
-            }
-        }
+    public void addSettingsWidgets(Consumer<ClickableWidget> adder) {
+        adder.accept(ConfigSliderWidget.forInt("Swap Delay (ms)", 50, 500, MacroConfig.daggerSwapDelayMs,
+                v -> MacroConfig.daggerSwapDelayMs = v));
+        adder.accept(ConfigSliderWidget.forInt("Toggle Delay (ms)", 50, 500, MacroConfig.daggerToggleDelayMs,
+                v -> MacroConfig.daggerToggleDelayMs = v));
     }
 }

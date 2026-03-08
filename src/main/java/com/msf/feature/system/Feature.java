@@ -1,5 +1,8 @@
 package com.msf.feature.system;
 
+import net.minecraft.client.gui.widget.ClickableWidget;
+import java.util.function.Consumer;
+
 public interface Feature {
     String getName();
     String getDescription();
@@ -10,5 +13,5 @@ public interface Feature {
     void onDisable();
     void onTick();
 
-    default void renderSettings() {}
+    default void addSettingsWidgets(Consumer<ClickableWidget> widgetAdder) {}
 }

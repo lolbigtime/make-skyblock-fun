@@ -4,8 +4,12 @@ import com.msf.config.MacroConfig;
 import com.msf.feature.system.Feature;
 import com.msf.feature.system.FeatureCategory;
 import com.msf.macro.FishingMacro;
-import imgui.ImGui;
-import imgui.type.ImBoolean;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.widget.CheckboxWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
+import net.minecraft.text.Text;
+
+import java.util.function.Consumer;
 
 public class FishingMacroFeature implements Feature {
 
@@ -50,15 +54,12 @@ public class FishingMacroFeature implements Feature {
     }
 
     @Override
-    public void renderSettings() {
-        ImBoolean killSea = new ImBoolean(MacroConfig.killSeaCreatures);
-        if (ImGui.checkbox("Kill Sea Creatures", killSea)) {
-            MacroConfig.killSeaCreatures = killSea.get();
-        }
-
-        if (FishingMacro.getInstance().isRunning()) {
-            ImGui.separator();
-            ImGui.text("State: " + FishingMacro.getInstance().getState().getDisplayName());
-        }
+    public void addSettingsWidgets(Consumer<ClickableWidget> adder) {
+        adder.accept(CheckboxWidget.builder(
+                Text.literal("Kill Sea Creatures"),
+                MinecraftClient.getInstance().textRenderer
+        ).checked(MacroConfig.killSeaCreatures).callback((cb, checked) -> {
+            MacroConfig.killSeaCreatures = checked;
+        }).build());
     }
 }

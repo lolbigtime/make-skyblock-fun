@@ -6,10 +6,7 @@
     "KeyBindingAccessor",
     "MinecraftClientAccessor",
     "MouseMixin",
-    "WindowFocusMixin",
-    "GameRendererMixin",
-    "ImGuiMouseMixin",
-    "ImGuiKeyboardMixin"
+    "WindowFocusMixin"
   ],
   "injectors": {
     "defaultRequire": 1

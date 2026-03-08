@@ -6,7 +6,7 @@ import com.msf.feature.RotationTestMode;
 import com.msf.feature.qol.DaggerSwapper;
 import com.msf.feature.script.FishingMacroFeature;
 import com.msf.feature.system.FeatureManager;
-import com.msf.gui.imgui.ImGuiManager;
+import com.msf.gui.MSFScreen;
 import com.msf.handler.RotationHandler;
 import com.msf.macro.FishingMacro;
 import com.msf.render.RenderHandler;
@@ -87,7 +87,11 @@ public class MSFClient implements ClientModInitializer {
         }
 
         if (menuKey.wasPressed()) {
-            ImGuiManager.getInstance().toggle();
+            if (client.currentScreen instanceof MSFScreen) {
+                client.setScreen(null);
+            } else {
+                client.setScreen(new MSFScreen());
+            }
         }
 
         // Stop macro on server disconnect
