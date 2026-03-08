@@ -6,11 +6,22 @@ import com.msf.feature.system.FeatureCategory;
 import com.msf.feature.system.FeatureManager;
 import com.msf.pathfinding.ReturnHandler;
 import imgui.ImGui;
+import imgui.flag.ImGuiCond;
 import imgui.type.ImBoolean;
 
 public class MSFWindow {
 
+    private boolean firstRender = true;
+
     public void render() {
+        if (firstRender) {
+            ImGui.setNextWindowSize(480, 520, ImGuiCond.FirstUseEver);
+            float displayW = ImGui.getIO().getDisplaySizeX();
+            float displayH = ImGui.getIO().getDisplaySizeY();
+            ImGui.setNextWindowPos((displayW - 480) / 2, (displayH - 520) / 2, ImGuiCond.FirstUseEver);
+            firstRender = false;
+        }
+
         if (!ImGui.begin("MSF")) {
             ImGui.end();
             return;
