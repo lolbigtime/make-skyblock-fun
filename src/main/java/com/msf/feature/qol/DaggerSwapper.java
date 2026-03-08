@@ -150,6 +150,9 @@ public class DaggerSwapper implements Feature {
                 mc.player.getEntityPos(), NAMETAG_SCAN_RADIUS, ArmorStandEntity.class
         );
 
+        boolean sawImmune = false;
+        Attunement detectedAttunement = null;
+
         for (ArmorStandEntity stand : stands) {
             Text customName = stand.getCustomName();
             if (customName == null) continue;
@@ -158,14 +161,26 @@ public class DaggerSwapper implements Feature {
             if (name == null) continue;
             String upper = name.toUpperCase();
 
-            for (Attunement att : Attunement.values()) {
-                if (upper.contains(att.name())) {
-                    if (att != lastCompletedAttunement) {
-                        triggerAttunement(att.name(), "nametag");
-                        return;
+            if (upper.contains("IMMUNE")) {
+                sawImmune = true;
+            }
+
+            if (detectedAttunement == null) {
+                for (Attunement att : Attunement.values()) {
+                    if (upper.contains(att.name())) {
+                        detectedAttunement = att;
+                        break;
                     }
                 }
             }
+        }
+
+        if (sawImmune) {
+            lastCompletedAttunement = null;
+        }
+
+        if (detectedAttunement != null && detectedAttunement != lastCompletedAttunement) {
+            triggerAttunement(detectedAttunement.name(), sawImmune ? "immune" : "nametag");
         }
     }
 
