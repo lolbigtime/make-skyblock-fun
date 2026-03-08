@@ -7,9 +7,6 @@ import imgui.gl3.ImGuiImplGl3;
 import net.minecraft.client.MinecraftClient;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 public class ImGuiManager {
@@ -59,8 +56,14 @@ public class ImGuiManager {
             io.setKeyMap(imgui.flag.ImGuiKey.Y, GLFW.GLFW_KEY_Y);
             io.setKeyMap(imgui.flag.ImGuiKey.Z, GLFW.GLFW_KEY_Z);
 
+            // Build font atlas explicitly before GL3 init
+            io.getFonts().build();
+
             implGl3 = new ImGuiImplGl3();
             implGl3.init("#version 150");
+
+            // Ensure font texture is uploaded
+            implGl3.updateFontsTexture();
 
             lastFrameTime = GLFW.glfwGetTime();
             initialized = true;
@@ -81,22 +84,6 @@ public class ImGuiManager {
         }
 
         try {
-            // Save GL state
-            int prevFramebuffer = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
-            int prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-            int prevTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-            int prevActiveTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
-            int prevArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-            int prevElementBuffer = GL11.glGetInteger(GL15.GL_ELEMENT_ARRAY_BUFFER_BINDING);
-            int prevVertexArray = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-            boolean prevBlend = GL11.glIsEnabled(GL11.GL_BLEND);
-            boolean prevDepthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-            boolean prevCullFace = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-            boolean prevScissorTest = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
-            int prevBlendSrc = GL11.glGetInteger(GL11.GL_BLEND_SRC);
-            int prevBlendDst = GL11.glGetInteger(GL11.GL_BLEND_DST);
-
-            // Update imgui IO state manually (no ImGuiImplGlfw)
             long handle = MinecraftClient.getInstance().getWindow().getHandle();
             ImGuiIO io = ImGui.getIO();
 
@@ -120,43 +107,20 @@ public class ImGuiManager {
             GLFW.glfwGetCursorPos(handle, mx, my);
             io.setMousePos((float) mx[0], (float) my[0]);
 
-            // Ensure we render to the default framebuffer (screen)
+            // Render to default framebuffer with correct viewport
+            int prevFramebuffer = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-
-            // Set viewport to full framebuffer
             GL11.glViewport(0, 0, fbW[0], fbH[0]);
 
             ImGui.newFrame();
-
-            // Build UI
             window.render();
-
-            // Render
             ImGui.render();
 
-            // Set up GL state for imgui rendering
-            GL11.glEnable(GL11.GL_BLEND);
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            GL11.glDisable(GL11.GL_CULL_FACE);
-            GL11.glDisable(GL11.GL_DEPTH_TEST);
-            GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
-
+            // ImGuiImplGl3.renderDrawData handles its own GL state save/restore
             implGl3.renderDrawData(ImGui.getDrawData());
 
-            // Restore GL state
+            // Restore framebuffer
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, prevFramebuffer);
-            GL20.glUseProgram(prevProgram);
-            GL13.glActiveTexture(prevActiveTexture);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, prevTexture);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, prevArrayBuffer);
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, prevElementBuffer);
-            GL30.glBindVertexArray(prevVertexArray);
-            GL11.glBlendFunc(prevBlendSrc, prevBlendDst);
-            if (prevBlend) GL11.glEnable(GL11.GL_BLEND); else GL11.glDisable(GL11.GL_BLEND);
-            if (prevDepthTest) GL11.glEnable(GL11.GL_DEPTH_TEST); else GL11.glDisable(GL11.GL_DEPTH_TEST);
-            if (prevCullFace) GL11.glEnable(GL11.GL_CULL_FACE); else GL11.glDisable(GL11.GL_CULL_FACE);
-            if (prevScissorTest) GL11.glEnable(GL11.GL_SCISSOR_TEST); else GL11.glDisable(GL11.GL_SCISSOR_TEST);
         } catch (Exception e) {
             System.err.println("[MSF] ImGui render error: " + e.getMessage());
             e.printStackTrace();
