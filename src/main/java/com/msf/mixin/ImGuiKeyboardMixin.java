@@ -4,6 +4,8 @@ import com.msf.gui.imgui.ImGuiManager;
 import imgui.ImGui;
 import imgui.ImGuiIO;
 import net.minecraft.client.Keyboard;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,10 +15,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ImGuiKeyboardMixin {
 
     @Inject(method = "onKey", at = @At("HEAD"), cancellable = true)
-    private void onKey(long window, int key, int scancode, int action, int mods, CallbackInfo ci) {
+    private void onKey(long window, int action, KeyInput keyInput, CallbackInfo ci) {
         ImGuiManager imgui = ImGuiManager.getInstance();
         if (imgui.isVisible() && imgui.isInitialized()) {
             ImGuiIO io = ImGui.getIO();
+            int key = keyInput.key();
+            int mods = keyInput.modifiers();
             if (key >= 0 && key < 512) {
                 io.setKeysDown(key, action != 0); // 0 = GLFW_RELEASE
             }
@@ -31,11 +35,11 @@ public class ImGuiKeyboardMixin {
     }
 
     @Inject(method = "onChar", at = @At("HEAD"), cancellable = true)
-    private void onChar(long window, int codePoint, int modifiers, CallbackInfo ci) {
+    private void onChar(long window, CharInput charInput, CallbackInfo ci) {
         ImGuiManager imgui = ImGuiManager.getInstance();
         if (imgui.isVisible() && imgui.isInitialized()) {
             ImGuiIO io = ImGui.getIO();
-            io.addInputCharacter(codePoint);
+            io.addInputCharacter(charInput.codepoint());
             if (io.getWantCaptureKeyboard()) {
                 ci.cancel();
             }
