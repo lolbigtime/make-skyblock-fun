@@ -82,6 +82,7 @@ public class ImGuiManager {
 
         try {
             // Save GL state
+            int prevFramebuffer = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
             int prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
             int prevTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
             int prevActiveTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
@@ -119,6 +120,9 @@ public class ImGuiManager {
             GLFW.glfwGetCursorPos(handle, mx, my);
             io.setMousePos((float) mx[0], (float) my[0]);
 
+            // Ensure we render to the default framebuffer (screen)
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+
             ImGui.newFrame();
 
             // Build UI
@@ -129,6 +133,7 @@ public class ImGuiManager {
             implGl3.renderDrawData(ImGui.getDrawData());
 
             // Restore GL state
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, prevFramebuffer);
             GL20.glUseProgram(prevProgram);
             GL13.glActiveTexture(prevActiveTexture);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, prevTexture);
