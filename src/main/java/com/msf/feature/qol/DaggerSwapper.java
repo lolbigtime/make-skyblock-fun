@@ -6,14 +6,17 @@ import com.msf.feature.system.FeatureCategory;
 import com.msf.gui.ConfigSliderWidget;
 import com.msf.handler.KeySimulator;
 import com.msf.util.Clock;
+import com.msf.util.EntityScanner;
 import com.msf.util.MathUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.widget.ClickableWidget;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,6 +26,8 @@ public class DaggerSwapper implements Feature {
     private static final Pattern ATTUNEMENT_PATTERN = Pattern.compile(
             "Strike using the (\\w+) attunement on your dagger"
     );
+    private static final double NAMETAG_SCAN_RADIUS = 16.0;
+    private static final int SCAN_INTERVAL_TICKS = 4;
 
     private enum State {
         IDLE, FINDING_DAGGER, SWAPPED_TO_DAGGER, CHECKING_MODE, WAITING_AFTER_TOGGLE, DONE
@@ -46,8 +51,11 @@ public class DaggerSwapper implements Feature {
     private boolean enabled = false;
     private State state = State.IDLE;
     private Attunement targetAttunement = null;
+    private Attunement lastCompletedAttunement = null;
     private int daggerSlot = -1;
+    private int tickCounter = 0;
     private final Clock stateTimer = new Clock();
+    private final Clock scanCooldown = new Clock();
 
     @Override
     public String getName() {
@@ -75,6 +83,7 @@ public class DaggerSwapper implements Feature {
         if (!enabled) {
             state = State.IDLE;
             targetAttunement = null;
+            lastCompletedAttunement = null;
         }
     }
 
@@ -85,6 +94,7 @@ public class DaggerSwapper implements Feature {
     public void onDisable() {
         state = State.IDLE;
         targetAttunement = null;
+        lastCompletedAttunement = null;
     }
 
     public void onChatMessage(String message) {
@@ -93,14 +103,20 @@ public class DaggerSwapper implements Feature {
         Matcher matcher = ATTUNEMENT_PATTERN.matcher(message);
         if (matcher.find()) {
             String attunementName = matcher.group(1).toUpperCase();
-            try {
-                targetAttunement = Attunement.valueOf(attunementName);
-                state = State.FINDING_DAGGER;
-                System.out.println("[MSF] Dagger swap triggered: " + attunementName
-                        + " -> " + targetAttunement.daggerName);
-            } catch (IllegalArgumentException e) {
-                System.out.println("[MSF] Unknown attunement: " + attunementName);
-            }
+            triggerAttunement(attunementName, "chat");
+        }
+    }
+
+    private void triggerAttunement(String attunementName, String source) {
+        try {
+            Attunement att = Attunement.valueOf(attunementName);
+            if (att == lastCompletedAttunement) return;
+            targetAttunement = att;
+            state = State.FINDING_DAGGER;
+            System.out.println("[MSF] Dagger swap triggered (" + source + "): " + attunementName
+                    + " -> " + targetAttunement.daggerName);
+        } catch (IllegalArgumentException e) {
+            System.out.println("[MSF] Unknown attunement: " + attunementName);
         }
     }
 
@@ -109,14 +125,46 @@ public class DaggerSwapper implements Feature {
         if (!enabled || mc.player == null) return;
 
         switch (state) {
-            case IDLE -> {}
+            case IDLE -> scanNametags();
             case FINDING_DAGGER -> handleFindingDagger();
             case SWAPPED_TO_DAGGER -> handleSwappedToDagger();
             case CHECKING_MODE -> handleCheckingMode();
             case WAITING_AFTER_TOGGLE -> handleWaitingAfterToggle();
             case DONE -> {
+                lastCompletedAttunement = targetAttunement;
+                scanCooldown.schedule(1500);
                 state = State.IDLE;
                 targetAttunement = null;
+            }
+        }
+    }
+
+    private void scanNametags() {
+        if (mc.player == null || mc.world == null) return;
+        if (scanCooldown.isScheduled() && !scanCooldown.passed()) return;
+
+        tickCounter++;
+        if (tickCounter % SCAN_INTERVAL_TICKS != 0) return;
+
+        List<ArmorStandEntity> stands = EntityScanner.getEntitiesWithinRadius(
+                mc.player.getEntityPos(), NAMETAG_SCAN_RADIUS, ArmorStandEntity.class
+        );
+
+        for (ArmorStandEntity stand : stands) {
+            Text customName = stand.getCustomName();
+            if (customName == null) continue;
+
+            String name = Formatting.strip(customName.getString());
+            if (name == null) continue;
+            String upper = name.toUpperCase();
+
+            for (Attunement att : Attunement.values()) {
+                if (upper.contains(att.name())) {
+                    if (att != lastCompletedAttunement) {
+                        triggerAttunement(att.name(), "nametag");
+                        return;
+                    }
+                }
             }
         }
     }
@@ -127,7 +175,6 @@ public class DaggerSwapper implements Feature {
             return;
         }
 
-        // Scan hotbar for the target dagger
         daggerSlot = -1;
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getStack(i);
@@ -165,11 +212,9 @@ public class DaggerSwapper implements Feature {
 
         ItemStack held = mc.player.getInventory().getStack(daggerSlot);
         if (held.getItem() == targetAttunement.expectedItem) {
-            // Correct mode already
             System.out.println("[MSF] Dagger already in correct mode");
             state = State.DONE;
         } else {
-            // Wrong mode, right-click to toggle
             KeySimulator.rightClick();
             long[] delay = MacroConfig.humanize(MacroConfig.daggerToggleDelayMs);
             stateTimer.schedule(MathUtil.randomBetween(delay[0], delay[1]));

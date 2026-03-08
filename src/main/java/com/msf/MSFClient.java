@@ -4,6 +4,7 @@ import com.msf.config.MacroConfig;
 import com.msf.feature.ChatSeaCreatureDetector;
 import com.msf.feature.RotationTestMode;
 import com.msf.feature.qol.DaggerSwapper;
+import com.msf.feature.qol.WandOfAtonement;
 import com.msf.feature.script.FishingMacroFeature;
 import com.msf.feature.system.FeatureManager;
 import com.msf.gui.MSFScreen;
@@ -57,6 +58,7 @@ public class MSFClient implements ClientModInitializer {
         fm.register(new FishingMacroFeature());
         DaggerSwapper daggerSwapper = new DaggerSwapper();
         fm.register(daggerSwapper);
+        fm.register(new WandOfAtonement());
 
         // Chat event handler
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {

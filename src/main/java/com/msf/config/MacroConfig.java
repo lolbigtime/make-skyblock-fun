@@ -61,6 +61,12 @@ public class MacroConfig {
     public static int daggerSwapDelayMs = 100;
     public static int daggerToggleDelayMs = 150;
 
+    // Wand of Atonement
+    public static int wandHealthThreshold = 70;
+    public static int wandCooldownMs = 5000;
+    public static int wandSwapDelayMs = 100;
+    public static int wandUseDelayMs = 150;
+
     // Feature states
     public static Map<String, Boolean> featureStates = new HashMap<>();
 
@@ -115,6 +121,11 @@ public class MacroConfig {
 
         int daggerSwapDelayMs = MacroConfig.daggerSwapDelayMs;
         int daggerToggleDelayMs = MacroConfig.daggerToggleDelayMs;
+
+        int wandHealthThreshold = MacroConfig.wandHealthThreshold;
+        int wandCooldownMs = MacroConfig.wandCooldownMs;
+        int wandSwapDelayMs = MacroConfig.wandSwapDelayMs;
+        int wandUseDelayMs = MacroConfig.wandUseDelayMs;
 
         Map<String, Boolean> featureStates = MacroConfig.featureStates;
     }
@@ -184,6 +195,11 @@ public class MacroConfig {
             daggerSwapDelayMs = data.daggerSwapDelayMs;
             daggerToggleDelayMs = data.daggerToggleDelayMs;
 
+            wandHealthThreshold = data.wandHealthThreshold;
+            wandCooldownMs = data.wandCooldownMs;
+            wandSwapDelayMs = data.wandSwapDelayMs;
+            wandUseDelayMs = data.wandUseDelayMs;
+
             if (data.featureStates != null) {
                 featureStates = new HashMap<>(data.featureStates);
             }
@@ -225,6 +241,10 @@ public class MacroConfig {
         data.failsafeRotationThreshold = failsafeRotationThreshold;
         data.daggerSwapDelayMs = daggerSwapDelayMs;
         data.daggerToggleDelayMs = daggerToggleDelayMs;
+        data.wandHealthThreshold = wandHealthThreshold;
+        data.wandCooldownMs = wandCooldownMs;
+        data.wandSwapDelayMs = wandSwapDelayMs;
+        data.wandUseDelayMs = wandUseDelayMs;
         data.featureStates = featureStates;
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
