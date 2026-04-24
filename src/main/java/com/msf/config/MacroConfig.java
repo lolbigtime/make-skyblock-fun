@@ -67,6 +67,10 @@ public class MacroConfig {
     public static int wandSwapDelayMs = 100;
     public static int wandUseDelayMs = 150;
 
+    // Gemstone Infusion
+    public static int gemstoneInfusionReactionMs = 200;
+    public static int gemstoneInfusionCooldownMs = 2000;
+
     // Feature states
     public static Map<String, Boolean> featureStates = new HashMap<>();
 
@@ -126,6 +130,9 @@ public class MacroConfig {
         int wandCooldownMs = MacroConfig.wandCooldownMs;
         int wandSwapDelayMs = MacroConfig.wandSwapDelayMs;
         int wandUseDelayMs = MacroConfig.wandUseDelayMs;
+
+        int gemstoneInfusionReactionMs = MacroConfig.gemstoneInfusionReactionMs;
+        int gemstoneInfusionCooldownMs = MacroConfig.gemstoneInfusionCooldownMs;
 
         Map<String, Boolean> featureStates = MacroConfig.featureStates;
     }
@@ -200,6 +207,9 @@ public class MacroConfig {
             wandSwapDelayMs = data.wandSwapDelayMs;
             wandUseDelayMs = data.wandUseDelayMs;
 
+            if (data.gemstoneInfusionReactionMs > 0) gemstoneInfusionReactionMs = data.gemstoneInfusionReactionMs;
+            if (data.gemstoneInfusionCooldownMs > 0) gemstoneInfusionCooldownMs = data.gemstoneInfusionCooldownMs;
+
             if (data.featureStates != null) {
                 featureStates = new HashMap<>(data.featureStates);
             }
@@ -245,6 +255,8 @@ public class MacroConfig {
         data.wandCooldownMs = wandCooldownMs;
         data.wandSwapDelayMs = wandSwapDelayMs;
         data.wandUseDelayMs = wandUseDelayMs;
+        data.gemstoneInfusionReactionMs = gemstoneInfusionReactionMs;
+        data.gemstoneInfusionCooldownMs = gemstoneInfusionCooldownMs;
         data.featureStates = featureStates;
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
