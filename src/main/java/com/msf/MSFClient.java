@@ -4,6 +4,7 @@ import com.msf.config.MacroConfig;
 import com.msf.feature.ChatSeaCreatureDetector;
 import com.msf.feature.RotationTestMode;
 import com.msf.feature.qol.DaggerSwapper;
+import com.msf.feature.qol.GemstoneInfusion;
 import com.msf.feature.qol.WandOfAtonement;
 import com.msf.feature.script.FishingMacroFeature;
 import com.msf.feature.system.FeatureManager;
@@ -59,6 +60,8 @@ public class MSFClient implements ClientModInitializer {
         DaggerSwapper daggerSwapper = new DaggerSwapper();
         fm.register(daggerSwapper);
         fm.register(new WandOfAtonement());
+        GemstoneInfusion gemstoneInfusion = new GemstoneInfusion();
+        fm.register(gemstoneInfusion);
 
         // Chat event handler
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
@@ -68,6 +71,9 @@ public class MSFClient implements ClientModInitializer {
             }
             if (daggerSwapper.isEnabled()) {
                 daggerSwapper.onChatMessage(msg);
+            }
+            if (gemstoneInfusion.isEnabled()) {
+                gemstoneInfusion.onChatMessage(msg);
             }
         });
 
